@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+/* Raw tokens. Mirrors src/design/tokens.ts; `npm run contrast` fails on drift. */
+:root {
+  --ink: #0b0b0f;
+  --paper: #f4f1ea;
+  --ink-soft: #17171f;
+  --paper-soft: #fffdf8;
+  --line: #2a2a35;
+  --line-light: #d9d4c7;
+
+  --acid: #d7f25c;
+  --cyan: #22d3ee;
+  --amber: #ffb703;
+  --coral: #ff5a3c;
+  --electric: #3b2bf5;
+  --violet: #6d28d9;
+  --deep-green: #0f5132;
+  --plum: #2a1a4a;
+  --magenta: #e0218a;
+
+  --dark-bg: #0b0b0f;
+  --dark-surface: #17171f;
+  --dark-text: #f4f1ea;
+  --dark-text-muted: #b4b1c0;
+  --dark-border: #2a2a35;
+  --dark-control-border: #77758a;
+  --dark-focus: #d7f25c;
+
+  --light-bg: #f4f1ea;
+  --light-surface: #fffdf8;
+  --light-text: #0b0b0f;
+  --light-text-muted: #52505a;
+  --light-border: #d9d4c7;
+  --light-control-border: #7c786e;
+  --light-focus: #3b2bf5;
+}
+
+/* Semantic roles. Dark is the default, light follows the system unless overridden. */
+:root,
+:root[data-theme="dark"] {
+  --bg: var(--dark-bg);
+  --surface: var(--dark-surface);
+  --text: var(--dark-text);
+  --text-muted: var(--dark-text-muted);
+  --border: var(--dark-border);
+  --control-border: var(--dark-control-border);
+  --focus: var(--dark-focus);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: var(--light-bg);
+    --surface: var(--light-surface);
+    --text: var(--light-text);
+    --text-muted: var(--light-text-muted);
+    --border: var(--light-border);
+    --control-border: var(--light-control-border);
+    --focus: var(--light-focus);
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg: var(--light-bg);
+  --surface: var(--light-surface);
+  --text: var(--light-text);
+  --text-muted: var(--light-text-muted);
+  --border: var(--light-border);
+  --control-border: var(--light-control-border);
+  --focus: var(--light-focus);
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-fg: var(--text);
+  --color-fg-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-control: var(--control-border);
+  --color-focus: var(--focus);
+
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-acid: var(--acid);
+  --color-cyan: var(--cyan);
+  --color-amber: var(--amber);
+  --color-coral: var(--coral);
+  --color-electric: var(--electric);
+  --color-violet: var(--violet);
+  --color-deep-green: var(--deep-green);
+  --color-plum: var(--plum);
+  --color-magenta: var(--magenta);
+
+  --font-sans: "Uncut Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Archivo Variable", "Uncut Sans", sans-serif;
+
+  --radius-DEFAULT: 4px;
+  --radius-card: 4px;
+
+  /* 4px base grid */
+  --spacing: 0.25rem;
+}
+
+html {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  font-feature-settings: "tnum" 0;
+}
+
+/* Tabular figures for dates, prices, distances. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Poster display: Archivo at full width and black weight. Only >= 28px, short text. */
+.display {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 125;
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+}
+
+/* Focus ring: 2px, 2px offset, never removed. */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

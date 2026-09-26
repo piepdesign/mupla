@@ -43,3 +43,5 @@ Wir arbeiten die Etappen 0 bis 6 nacheinander ab. Ich schicke dir jede Etappe ei
 4. eine Zeile Verlauf, die ich in die Projektnotiz `04 Umsetzung/log.md` übernehmen kann.
 
 Fang nicht mit der nächsten Etappe an, ohne dass ich sie schicke.
+
+@AGENTS.md
