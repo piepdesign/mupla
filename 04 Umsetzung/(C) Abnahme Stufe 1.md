@@ -6,7 +6,7 @@ Stand 2026-09-26, Branch `claude/project-thread-sp1ewt`. Geprüft gegen die fün
 
 | # | Kriterium | Urteil | Beleg |
 |---|---|---|---|
-| 1 | Mit Fynns Last.fm-Namen erscheinen ohne manuelle Eingabe echte, zukünftige Events, die zum Profil passen | **nicht nachgewiesen** | Ticketmaster liefert echte DE-Events (dein Test: 94 im Umkreis 100 km). Die ganze Kette mit deinem Last.fm-Profil lief noch nie, weil Name und Last.fm-Key fehlen und meine Umgebung die APIs sperrt. Alles darunter ist mit fiktiven Daten (`npm run dev:mock`) geprüft. |
+| 1 | Mit Fynns Last.fm-Namen erscheinen ohne manuelle Eingabe echte, zukünftige Events, die zum Profil passen | **erfüllt** (Nachtrag 2026-09-26) | Fynns lokaler Lauf mit echtem Profil und echten Ticketmaster-Daten: `/debug/gegenrechnung` zeigt 10 Empfehlungen, „alle Prüfungen bestanden“. Damit ist auch Kriterium 2 mit echten Daten belegt. |
 | 2 | Jede Karte trägt eine wahre Begründung, die auf konkrete Profildaten zurückführt | erfüllt (mit Testdaten) | Typ erzwingt mindestens eine Begründung, `scoreMatch` verwirft Karten ohne. Gegenrechnung unten: 10 von 10 stimmen, 34 von 34 Einzelprüfungen. |
 | 3 | Alle Filter wirken kombiniert und ohne Neuladen | erfüllt | Filter laufen im Browser über den bereits geladenen Bestand, die URL wird per `history.replaceState` mitgeschrieben, kein Serveraufruf. 57 Filtertests. Browsertest: Umkreis, Wochenende, Regler ändern Liste und URL, Ansichtswechsel behält `?km=400`. |
 | 4 | Kontrast, Tastatur und Fokus erfüllen WCAG AA; Farbe nie allein informationstragend | erfüllt, Screenreader-Test offen | Kontrast 25/25, axe 0 Verstöße auf 8 Seiten hell und dunkel, Tastaturdurchlauf unten. Status, Favorit und Prüfergebnis stehen immer als Text. Einen echten Screenreader-Durchlauf habe ich nicht gemacht. |
@@ -119,7 +119,7 @@ Beide lokal eingebunden, kein Aufruf an Google Fonts oder andere Server. Details
 
 Streng, sortiert nach Gewicht.
 
-1. **Kriterium 1 ist offen.** Kein Lauf mit deinem echten Last.fm-Profil. Damit sind auch drei Annahmen aus Etappe 2 ungeprüft: ob `tag.getSimilar` Daten liefert (sonst greift der Ersatzweg), ob die Jahrescharts für „Wiedersehen“ den Zeitraum einhalten (`/debug/profil` zeigt das), und wie viele Ticketmaster-Termine einen Profilbezug haben.
+1. **Kriterium 1 ist seit Fynns Lauf erfüllt.** Weiter ungeprüft sind drei Annahmen aus Etappe 2 ungeprüft: ob `tag.getSimilar` Daten liefert (sonst greift der Ersatzweg), ob die Jahrescharts für „Wiedersehen“ den Zeitraum einhalten (`/debug/profil` zeigt das), und wie viele Ticketmaster-Termine einen Profilbezug haben.
 2. **Clubszene fehlt.** Einzige freie Event-API ist Ticketmaster. Eigene Liste und ICS-Kalender helfen nur mit Handarbeit.
 3. **Wikidata ist nicht angebunden.** Geplant für Gründungsjahr von Festivals (Ansicht „New“, Erstausgabe) und Venue-Kapazität. „New“ nutzt deshalb nur „zum ersten Mal gesehen“, Größen sind aus dem Venue-Namen geschätzt und so markiert.
 4. **Merch-Links nur aus der eigenen Liste.** Ticketmaster hat kein Merch-Feld, das ich belegen konnte; eine freie Merch-Quelle gibt es nicht.
