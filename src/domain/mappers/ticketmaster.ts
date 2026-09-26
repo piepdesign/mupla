@@ -36,7 +36,7 @@ function mapVenue(raw: Obj, fetchedAt: string): Venue {
   const valid = isValidLatLon(lat, lon);
   return {
     id: `tm:${s(raw.id) ?? "unknown"}`,
-    name: s(raw.name) ?? "Ort unbekannt",
+    name: s(raw.name) ?? "",
     city: s(o(raw.city).name) ?? "",
     country: normalizeCountry(s(o(raw.country).countryCode)) ?? "",
     lat: valid ? lat : undefined,
@@ -77,7 +77,7 @@ export function mapTicketmasterEvent(raw: Obj, fetchedAt: string, now = new Date
   if (!id || !title || !localDate) return null;
 
   const venueRaw = arr(o(raw._embedded).venues)[0];
-  const venue = venueRaw ? mapVenue(venueRaw, fetchedAt) : { id: "tm:unknown", name: "Ort unbekannt", city: "", country: "", sources: [] };
+  const venue = venueRaw ? mapVenue(venueRaw, fetchedAt) : { id: "tm:unknown", name: "", city: "", country: "", sources: [] };
   const tz = s(dates.timezone) ?? s(venueRaw?.timezone) ?? "Europe/Berlin";
 
   const timeKnown = !!(s(start.dateTime) || s(start.localTime)) && start.timeTBA !== true && start.noSpecificTime !== true;

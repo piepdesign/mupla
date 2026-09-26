@@ -101,7 +101,7 @@ export type Reason =
   | { type: "direct-artist"; artist: string; plays: number }
   | { type: "similar-artist"; artist: string; via: string }
   | { type: "lineup-match"; count: number; examples: string[] }
-  | { type: "genre-match"; tag: string }
+  | { type: "genre-match"; tag: string; artist?: string }
   | { type: "adjacent-genre"; tag: string; via: string }
   | { type: "dormant-artist"; artist: string; period: string };
 

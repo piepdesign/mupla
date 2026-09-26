@@ -1,17 +1,17 @@
+import Link from "next/link";
 import type { Recommendation } from "@/domain/types";
 import type { Accent, TextAccent } from "@/design/tokens";
 import { renderReason } from "@/domain/reasons";
-import Link from "next/link";
+import { formatEventDate, formatFacts, formatPlace, statusLabel } from "@/lib/format";
 import { artistHref } from "@/lib/links";
 import { ExternalLink } from "./ExternalLink";
-import { formatDistance, formatDuration, formatEventDate, formatPrice, sizeLabel, statusLabel } from "@/lib/format";
 import { FavoriteToggle } from "./FavoriteToggle";
 import { GeneratedArt } from "./GeneratedArt";
 import { ScoreBreakdown } from "./ScoreBreakdown";
 
 /**
- * Field order is fixed by the design direction:
- * date, name, place + distance, duration, price, up to three genres, reason, favourite, ticket link.
+ * Field order is fixed by the design direction: date, name, place, facts, genres, reason, favourite, tickets.
+ * Unknown facts are left out instead of printed as "unbekannt"; the reason is never left out.
  */
 export function EventCard({
   rec,
@@ -22,67 +22,48 @@ export function EventCard({
   rec: Recommendation;
   pair: readonly [TextAccent, Accent];
   showScore?: boolean;
-  /** Controlled favourite state from the store (stage 5); falls back to local state. */
   favorite?: { on: boolean; toggle: () => void };
 }) {
   const { event: e } = rec;
   const status = statusLabel[e.status];
   const headingId = `ev-${e.id}-title`;
+  const place = formatPlace(e, rec.distanceKm);
+  const facts = formatFacts(e);
 
   return (
     <article aria-labelledby={headingId} className="flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface">
       {e.imageUrl ? (
         // Provider images vary in quality; the card must work without them.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={e.imageUrl} alt="" className="aspect-[16/9] w-full object-cover" />
+        <img src={e.imageUrl} alt="" className="aspect-[2/1] w-full object-cover" />
       ) : (
         <GeneratedArt pair={pair} label={e.title} />
       )}
 
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex flex-1 flex-col gap-2 p-4">
         <p className="tabular text-sm text-fg-muted">
           <time dateTime={e.startsAt}>{formatEventDate(e)}</time>
           {status && (
-            <span className="ml-2 inline-block rounded border border-control px-1.5 text-xs font-semibold uppercase tracking-wide text-fg">
-              {status}
-            </span>
+            <span className="ml-2 inline-block rounded border border-control px-1.5 text-xs font-semibold uppercase tracking-wide text-fg">{status}</span>
           )}
         </p>
 
-        <h3 id={headingId} className="text-xl leading-tight font-bold">
+        <h3 id={headingId} className="text-lg leading-tight font-bold">
           {e.title}
         </h3>
 
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-sm">
-          <dt className="sr-only">Ort</dt>
-          <dd className="col-span-2">
-            {e.venue.name}, {e.venue.city}
-            <span className="tabular text-fg-muted"> · {formatDistance(rec.distanceKm)}</span>
-          </dd>
-          <dt className="text-fg-muted">Dauer</dt>
-          <dd className="tabular">
-            {formatDuration(e)} · {sizeLabel[e.size]}
-            {e.sizeEstimated && <span className="text-fg-muted"> (geschätzt)</span>}
-          </dd>
-          <dt className="text-fg-muted">Preis</dt>
-          <dd className="tabular">{formatPrice(e.price)}</dd>
-        </dl>
-
-        {e.genres.length > 0 && (
-          <ul aria-label="Genres" className="flex flex-wrap gap-1.5">
-            {e.genres.slice(0, 3).map((g) => (
-              <li key={g} className="rounded border border-border px-2 py-0.5 text-xs text-fg-muted">
-                {g}
-              </li>
-            ))}
-          </ul>
+        {(place || facts) && (
+          <p className="text-sm">
+            {place}
+            {place && facts && <br />}
+            {facts && <span className="text-fg-muted">{facts}</span>}
+          </p>
         )}
 
-        {/* The reason is the point of mupla: same visual weight as the name, never a footnote. */}
-        <div className="border-l-4 border-focus pl-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Warum hier</p>
+        {/* The reason is the point of mupla: it stays on every card, set apart by the rule, not by a label. */}
+        <div className="mt-1 border-l-4 border-focus pl-3">
           {rec.reasons.map((r, i) => (
-            <p key={i} className="text-lg leading-snug">
+            <p key={i} className="leading-snug">
               {renderReason(r).map((s, j) =>
                 s.artist ? (
                   <Link key={j} href={artistHref(s.text)} className="font-bold underline decoration-1 underline-offset-2 hover:decoration-2">
@@ -101,7 +82,7 @@ export function EventCard({
         </div>
 
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
-          <FavoriteToggle label={e.title} state={favorite} />
+          <FavoriteToggle label={e.title} state={favorite} compact />
           {e.officialTicketUrl && (
             <ExternalLink href={e.officialTicketUrl} context={`Tickets für ${e.title}, offizieller Verkauf`} primary>
               Tickets

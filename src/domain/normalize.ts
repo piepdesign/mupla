@@ -100,6 +100,15 @@ const GENRE_ALIASES: Record<string, string> = {
   "classical music": "classical",
 };
 
+/**
+ * Umbrella genres as Ticketmaster classifies them. They say little about taste on their own
+ * ("rock" fits half the programme), so matching prefers specific tags and weighs these down.
+ */
+export const BROAD_GENRES = new Set([
+  "rock", "pop", "electronic", "hip-hop", "alternative", "metal", "dance", "rnb", "country", "jazz", "classical",
+  "folk", "latin", "world", "blues", "reggae", "punk", "soul", "indie", "schlager", "chanson francaise", "german",
+]);
+
 /** Lowercase tag form comparable with Last.fm tags. Splits "Dance/Electronic"-style labels only via the alias table. */
 export function normalizeGenre(raw: string): string | undefined {
   const g = raw.trim().toLowerCase().replace(/\s+/g, " ");

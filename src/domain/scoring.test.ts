@@ -82,8 +82,8 @@ describe("component curves", () => {
 
   it("total score is exactly the weighted sum", () => {
     const c = { profileMatch: 0.8, reachability: 0.5, timing: 1, discovery: 0.2, priceFriction: 0.5 };
-    expect(totalScore(c)).toBeCloseTo(0.5 * 0.8 + 0.2 * 0.5 + 0.15 * 1 + 0.15 * 0.2 - 0.2 * 0.5);
-    expect(WEIGHTS.profileMatch).toBe(0.5);
+    expect(totalScore(c)).toBeCloseTo(0.55 * 0.8 + 0.15 * 0.5 + 0.15 * 1 + 0.15 * 0.2 - 0.2 * 0.5);
+    expect(WEIGHTS.profileMatch).toBe(0.55);
   });
 });
 
@@ -124,6 +124,31 @@ describe("scoreMatch and reasons", () => {
     expect(score(weak, { ...settings, discoveryLevel: 0 })).toBeNull();
     const r = score(weak, { ...settings, discoveryLevel: 0.6 })!;
     expect(r.reasons[0]).toEqual({ type: "genre-match", tag: "ambient" });
+  });
+
+  it("genre reason names the act whose tags matched, so different events get different reasons", () => {
+    const withTags = (name: string, genres: string[]) => {
+      const e = ev({ acts: [name], genres: ["electronic"] });
+      e.lineup[0].artist.genres = genres;
+      return e;
+    };
+    const r1 = score(withTags("Unknown A", ["ambient"]), { ...settings, discoveryLevel: 0.6 })!;
+    const r2 = score(withTags("Unknown B", ["ambient"]), { ...settings, discoveryLevel: 0.6 })!;
+    expect(r1.reasons[0]).toEqual({ type: "genre-match", tag: "ambient", artist: "Unknown A" });
+    expect(r2.reasons[0]).toEqual({ type: "genre-match", tag: "ambient", artist: "Unknown B" });
+  });
+
+  it("umbrella genres count half and give way to a specific tag", () => {
+    const broadOnly = matchEvent(ev({ acts: ["Unknown"], genres: ["electronic"] }), idx)!;
+    expect(broadOnly.genres[0]).toMatchObject({ tag: "electronic", weight: 0.5, broad: true });
+    const e = ev({ acts: ["Unknown"], genres: ["electronic"] });
+    e.lineup[0].artist.genres = ["ambient"];
+    expect(matchEvent(e, idx)!.genres.map((g) => g.tag)).toEqual(["ambient"]);
+  });
+
+  it("profile tags are normalised like event genres", () => {
+    const p2 = { ...profile, topTags: [{ tag: "Hip Hop", weight: 1 }] };
+    expect(matchEvent(ev({ acts: ["X"], genres: ["hip-hop"] }), buildProfileIndex(p2))!.genres[0].tag).toBe("hip-hop");
   });
 
   it("adjacent genre only counts with discovery and says so", () => {
@@ -173,11 +198,11 @@ describe("views", () => {
   it("nearby sorts by distance", () => {
     expect(applyView("nearby", cands, ctx).items[0].event.id).toBe("near");
   });
-  it("festival season only has festivals", () => {
-    expect(applyView("festivals", cands, ctx).items.map((r) => r.event.id)).toEqual(["fest"]);
+  it("season only has festivals", () => {
+    expect(applyView("season", cands, ctx).items.map((r) => r.event.id)).toEqual(["fest"]);
   });
   it("last chance excludes sold out and far future", () => {
-    expect(applyView("letzte-chance", cands, ctx).items.map((r) => r.event.id)).toEqual(["near"]);
+    expect(applyView("last-chance", cands, ctx).items.map((r) => r.event.id)).toEqual(["near"]);
   });
   it("upcoming is chronological", () => {
     const ids = applyView("upcoming", cands, ctx).items.map((r) => r.event.id);
@@ -189,8 +214,22 @@ describe("views", () => {
     expect(applyView("new", seen, ctx).items).toEqual([]);
   });
   it("every view item has at least one reason", () => {
-    for (const v of ["for-you", "upcoming", "nearby", "popular", "festivals", "wiedersehen", "grenzgaenger"] as const) {
+    for (const v of ["for-you", "upcoming", "nearby", "popular", "season", "rewind", "off-the-grid", "timeframe"] as const) {
       for (const r of applyView(v, cands, ctx).items) expect(r.reasons.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("timeframe view", () => {
+  const cands: Candidate[] = [3, 20, 60].map((days) => {
+    const event = ev({ id: `d${days}`, acts: ["Bonobo"], days });
+    return { event, match: matchEvent(event, idx)! };
+  });
+  const ctx = { ...settings, ledgerCreatedAt: NOW.toISOString() };
+  const ids = (span: "week" | "month" | "year") => applyView("timeframe", cands, { ...ctx, span }).items.map((r) => r.event.id).sort();
+  it("rotates week, month and year", () => {
+    expect(ids("week")).toEqual(["d3"]);
+    expect(ids("month")).toEqual(["d20", "d3"]);
+    expect(ids("year")).toEqual(["d20", "d3", "d60"]);
   });
 });

@@ -26,7 +26,15 @@ export function renderReason(r: Reason): ReasonSegment[] {
         { text: "." },
       ];
     case "genre-match":
-      return [{ text: "Weil " }, { text: r.tag, strong: true }, { text: " zu deinen meistgehörten Genres gehört." }];
+      return r.artist
+        ? [
+            { text: "Weil " },
+            { text: r.artist, strong: true, artist: true },
+            { text: " unter " },
+            { text: r.tag, strong: true },
+            { text: " läuft, einem deiner meistgehörten Genres." },
+          ]
+        : [{ text: "Weil " }, { text: r.tag, strong: true }, { text: " zu deinen meistgehörten Genres gehört." }];
     case "adjacent-genre":
       return [
         { text: "" },

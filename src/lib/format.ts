@@ -53,3 +53,22 @@ export const sizeLabel: Record<MusicEvent["size"], string> = {
   festival: "Festival",
   unknown: "Größe unbekannt",
 };
+
+/** "Venue, City · 12 km", leaving out whatever is unknown. Null when nothing is known. */
+export function formatPlace(e: Pick<MusicEvent, "venue">, km: number | undefined): string | null {
+  const place = [e.venue.name, e.venue.city].filter((x) => x && x.trim()).join(", ");
+  const parts = [place, km !== undefined ? formatDistance(km) : ""].filter(Boolean);
+  return parts.length ? parts.join(" · ") : null;
+}
+
+/**
+ * Secondary facts for a card, only the ones that carry information:
+ * duration only for multi-day events, size only when not unknown, price only when known.
+ */
+export function formatFacts(e: Pick<MusicEvent, "durationDays" | "size" | "price">): string | null {
+  const parts: string[] = [];
+  if (e.durationDays && e.durationDays > 1) parts.push(`${e.durationDays} Tage`);
+  if (e.size !== "unknown") parts.push(sizeLabel[e.size]);
+  if (e.price && (e.price.min !== undefined || e.price.max !== undefined)) parts.push(formatPrice(e.price));
+  return parts.length ? parts.join(" · ") : null;
+}

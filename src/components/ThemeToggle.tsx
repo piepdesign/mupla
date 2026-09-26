@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MonitorIcon, MoonIcon, SunIcon } from "./icons";
 
 type Mode = "system" | "light" | "dark";
 const KEY = "mupla-theme";
@@ -15,6 +16,10 @@ function apply(mode: Mode) {
 /** Runs before paint (see layout.tsx) so the chosen theme does not flash. */
 export const themeBootScript = `try{var m=localStorage.getItem("${KEY}");if(m==="light"||m==="dark")document.documentElement.setAttribute("data-theme",m)}catch(e){}`;
 
+const ORDER: Mode[] = ["system", "light", "dark"];
+const ICON = { system: MonitorIcon, light: SunIcon, dark: MoonIcon };
+
+/** One icon button that cycles System, Hell, Dunkel. The name says the current mode and what a press does. */
 export function ThemeToggle() {
   const [mode, setMode] = useState<Mode>("system");
 
@@ -36,20 +41,17 @@ export function ThemeToggle() {
     } catch {}
   }
 
+  const next = ORDER[(ORDER.indexOf(mode) + 1) % ORDER.length];
+  const Icon = ICON[mode];
   return (
-    <label className="flex items-center gap-2 text-sm">
-      <span className="text-fg-muted">Darstellung</span>
-      <select
-        value={mode}
-        onChange={(e) => change(e.target.value as Mode)}
-        className="min-h-11 rounded border border-control bg-surface px-2 text-fg"
-      >
-        {(Object.keys(labels) as Mode[]).map((m) => (
-          <option key={m} value={m}>
-            {labels[m]}
-          </option>
-        ))}
-      </select>
-    </label>
+    <button
+      type="button"
+      onClick={() => change(next)}
+      aria-label={`Darstellung: ${labels[mode]}. Wechseln zu ${labels[next]}`}
+      title={`Darstellung: ${labels[mode]}`}
+      className="inline-flex h-11 w-11 items-center justify-center rounded hover:bg-fg/10"
+    >
+      <Icon />
+    </button>
   );
 }

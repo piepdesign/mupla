@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SearchIcon, UserIcon } from "./icons";
 
 const LINKS = [
-  ["/suche", "Suche"],
-  ["/profil", "Mein Profil"],
+  ["/suche", "Suche", SearchIcon],
+  ["/profil", "Mein Profil", UserIcon],
 ] as const;
 
 export function ToolNav() {
@@ -13,17 +14,22 @@ export function ToolNav() {
   return (
     <nav aria-label="Werkzeuge">
       <ul className="flex gap-1">
-        {LINKS.map(([href, label]) => (
-          <li key={href}>
-            <Link
-              href={href}
-              aria-current={pathname === href ? "page" : undefined}
-              className={`inline-flex min-h-11 items-center rounded px-3 text-sm font-medium ${pathname === href ? "bg-fg text-bg" : "hover:bg-fg/10"}`}
-            >
-              {label}
-            </Link>
-          </li>
-        ))}
+        {LINKS.map(([href, label, Icon]) => {
+          const active = pathname === href;
+          return (
+            <li key={href}>
+              <Link
+                href={href}
+                aria-label={label}
+                title={label}
+                aria-current={active ? "page" : undefined}
+                className={`inline-flex h-11 w-11 items-center justify-center rounded ${active ? "bg-fg text-bg" : "hover:bg-fg/10"}`}
+              >
+                <Icon />
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

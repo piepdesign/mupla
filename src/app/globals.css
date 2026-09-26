@@ -149,3 +149,8 @@ input[type="date"]:focus-within {
     scroll-behavior: auto !important;
   }
 }
+
+/* The sticky header must never cover the focused element (WCAG 2.4.11). */
+html {
+  scroll-padding-top: 5rem;
+}

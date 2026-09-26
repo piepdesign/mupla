@@ -584,7 +584,7 @@ describe("mapTicketmasterEvent", () => {
     });
     const result = mapTicketmasterEvent(raw, "2026-09-26T00:00:00.000Z");
     expect(result?.venue.id).toBe("tm:unknown");
-    expect(result?.venue.name).toBe("Ort unbekannt");
+    expect(result?.venue.name).toBe("");
   });
 
   it("handles missing _embedded gracefully", () => {

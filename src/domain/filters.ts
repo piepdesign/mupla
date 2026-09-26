@@ -1,4 +1,5 @@
 import type { EventSize, Recommendation } from "./types";
+import { SPANS, type Span } from "./views";
 
 /**
  * Filters are orthogonal to views, live in the URL (shareable, survive reloads and view switches)
@@ -11,12 +12,20 @@ export const COUNTRIES = [
 ] as const;
 
 export const SIZES: [EventSize, string][] = [
-  ["club", "Club"], ["hall", "Halle"], ["arena", "Arena"], ["open-air", "Open Air"], ["festival", "Festival"], ["unknown", "Unbekannt"],
+  ["club", "Club"], ["hall", "Hall"], ["arena", "Arena"], ["open-air", "Open Air"], ["festival", "Festival"], ["unknown", "Unknown"],
 ];
 
 export const WEEKDAYS = [["1", "Mo"], ["2", "Di"], ["3", "Mi"], ["4", "Do"], ["5", "Fr"], ["6", "Sa"], ["0", "So"]] as const;
 
 export const RADIUS_OPTIONS = [25, 50, 100, 150, 250, 400, 0] as const; // 0 = egal
+
+export const SORTS = [
+  ["standard", "Best match"],
+  ["date", "Date"],
+  ["distance", "Distance"],
+  ["price", "Price"],
+] as const;
+export type Sort = (typeof SORTS)[number][0];
 
 export type Filters = {
   countries: string[]; // empty = all
@@ -31,6 +40,10 @@ export type Filters = {
   genres: string[]; // empty = all
   discovery: number; // 0..100
   q: string;
+  /** "standard" keeps each view's own order (score, date, distance ...). */
+  sort: Sort;
+  /** Timeframe view: week, month or year. */
+  span: Span;
 };
 
 export const DEFAULT_FILTERS: Filters = {
@@ -42,6 +55,8 @@ export const DEFAULT_FILTERS: Filters = {
   genres: [],
   discovery: 30,
   q: "",
+  sort: "standard",
+  span: "week",
 };
 
 const list = (v: string | null) => (v ? v.split(",").map((s) => s.trim()).filter(Boolean) : []);
@@ -69,6 +84,8 @@ export function parseFilters(sp: URLSearchParams): Filters {
     genres: list(sp.get("genre")).map((g) => g.toLowerCase()),
     discovery: disc === undefined ? DEFAULT_FILTERS.discovery : Math.min(100, disc),
     q: sp.get("q")?.trim() ?? "",
+    sort: SORTS.find(([k]) => k === sp.get("sort"))?.[0] ?? "standard",
+    span: SPANS.find((x) => x.key === sp.get("span"))?.key ?? "week",
   };
 }
 
@@ -87,6 +104,8 @@ export function serializeFilters(f: Filters): URLSearchParams {
   if (f.genres.length) sp.set("genre", f.genres.join(","));
   if (f.discovery !== DEFAULT_FILTERS.discovery) sp.set("entdeckung", String(f.discovery));
   if (f.q) sp.set("q", f.q);
+  if (f.sort !== DEFAULT_FILTERS.sort) sp.set("sort", f.sort);
+  if (f.span !== DEFAULT_FILTERS.span) sp.set("span", f.span);
   return sp;
 }
 
@@ -129,4 +148,16 @@ export function applyFilters<T extends Pick<Recommendation, "event" | "distanceK
     }
     return matchesQuery(r, f.q);
   });
+}
+
+/** Re-sorts a view's result. Unknown distance or price always goes last, never first. */
+export function applySort<T extends Pick<Recommendation, "event" | "distanceKm">>(items: T[], sort: Sort): T[] {
+  if (sort === "standard") return items;
+  const last = (v: number | undefined) => (v === undefined ? Infinity : v);
+  const key: Record<Exclude<Sort, "standard">, (r: T) => number> = {
+    date: (r) => Date.parse(r.event.startsAt),
+    distance: (r) => last(r.distanceKm),
+    price: (r) => last(r.event.price?.min ?? r.event.price?.max),
+  };
+  return [...items].sort((a, b) => key[sort](a) - key[sort](b));
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { MusicEvent } from "@/domain/types";
-import { formatDistance, formatEventDate, formatPrice, statusLabel } from "@/lib/format";
+import { formatEventDate, formatFacts, formatPlace, statusLabel } from "@/lib/format";
 import { eventFavoriteKind, useFavorites } from "@/lib/favorites";
 import { artistHref } from "@/lib/links";
 import { ExternalLink } from "./ExternalLink";
@@ -30,8 +30,7 @@ export function EventRows({ items, linkHeadliner = true }: { items: EventRow[]; 
                 {status && <span className="ml-2 rounded border border-control px-1.5 text-xs font-semibold uppercase">{status}</span>}
               </p>
               <p className="text-sm text-fg-muted">
-                {e.venue.name}, {e.venue.city} · {formatDistance(distanceKm)} · {formatPrice(e.price)}
-                {e.genres.length > 0 && ` · ${e.genres.slice(0, 3).join(", ")}`}
+                {[formatPlace(e, distanceKm), formatFacts(e), e.genres.slice(0, 3).join(", ")].filter(Boolean).join(" · ")}
               </p>
               {note && <p className="text-sm">{note}</p>}
             </div>
@@ -40,7 +39,7 @@ export function EventRows({ items, linkHeadliner = true }: { items: EventRow[]; 
                 {head.artist.name}
               </Link>
             )}
-            <FavoriteToggle label={e.title} state={{ on: has(kind, e.id), toggle: () => toggle(kind, e.id) }} />
+            <FavoriteToggle compact label={e.title} state={{ on: has(kind, e.id), toggle: () => toggle(kind, e.id) }} />
             {e.officialTicketUrl && (
               <ExternalLink href={e.officialTicketUrl} context={`Tickets für ${e.title}, offizieller Verkauf`}>
                 Tickets

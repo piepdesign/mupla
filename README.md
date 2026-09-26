@@ -47,7 +47,8 @@ npm run dev:mock
 
 | Adresse | Was |
 |---|---|
-| `/` und `/ansicht/…` | die 13 Ansichten, alle mit Filterleiste; Filter stehen in der URL und bleiben beim Ansichtswechsel |
+| `/` | Übersicht: jede Ansicht als Reihe mit Kacheln (For You, Upcoming, Nearby, Popular, New, This Week/Month/Year, Season, Off the Grid, Rewind, Last Chance, Favorites); Suche, Standort, Radius, Sortierung und Filter oben wirken auf alle Reihen und stehen in der URL |
+| `/ansicht/…` | eine Ansicht vollständig, gleiche Filter |
 | `/suche` | freie Suche über Artist, Genre, Ort, Event; Treffer ohne Profilbezug stehen getrennt und ohne Rangfolge darunter |
 | `/artist/NAME` | Termine nach eigener Tour, Gastauftritt, Festival; Genres, Ähnliche, deine Hörhistorie |
 | `/profil` | gemerkte Termine, Favoriten, „Neu seit deinem letzten Besuch“, Export und Import als JSON |

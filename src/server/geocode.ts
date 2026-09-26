@@ -24,3 +24,25 @@ export function geocodeCity(city: string, country: string): Promise<LatLon | nul
     return Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null;
   });
 }
+
+/**
+ * Free-text place lookup for the home location ("Marburg", "Kassel Innenstadt"). User-triggered only, cached 90 days.
+ * Nominatim search parameters q, format=jsonv2, limit, accept-language: https://nominatim.org/release-docs/latest/api/Search/
+ */
+export function geocodePlace(query: string): Promise<{ label: string; lat: number; lon: number } | null> {
+  const q = query.trim().toLowerCase();
+  return cached(`geo.place.${q}`, 90 * DAY, async () => {
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    url.searchParams.set("q", q);
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("limit", "1");
+    url.searchParams.set("accept-language", "de");
+    const res = await throttledFetch(url.toString(), 1100);
+    if (!res.ok) throw new Error(`Nominatim HTTP ${res.status}`);
+    const hits = (await res.json()) as { lat?: string; lon?: string; name?: string; display_name?: string }[];
+    const lat = Number(hits[0]?.lat);
+    const lon = Number(hits[0]?.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    return { label: hits[0].name || hits[0].display_name?.split(",")[0] || query.trim(), lat, lon };
+  });
+}

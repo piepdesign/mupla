@@ -1,5 +1,5 @@
 import type { MusicEvent, Reason, Recommendation, ScoreComponents, TasteProfile } from "./types";
-import { normalizeName } from "./normalize";
+import { BROAD_GENRES, normalizeGenre, normalizeName } from "./normalize";
 import { haversineKm, type LatLon } from "@/lib/geo";
 
 /**
@@ -15,7 +15,8 @@ import { haversineKm, type LatLon } from "@/lib/geo";
 
 // ---------------------------------------------------------------- constants
 
-export const WEIGHTS = { profileMatch: 0.5, reachability: 0.2, timing: 0.15, discovery: 0.15, priceFriction: 0.2 } as const;
+// Reachability lowered from 0.2 to 0.15 after the first live run (distance dominated the ranking); taste gets the 0.05.
+export const WEIGHTS = { profileMatch: 0.55, reachability: 0.15, timing: 0.15, discovery: 0.15, priceFriction: 0.2 } as const;
 
 export const PROFILE = {
   /** Direct artist hit: base + share of the artist's normalised profile weight. */
@@ -32,6 +33,8 @@ export const PROFILE = {
   festivalCap: 1.6,
   /** Genre overlap alone is a weak signal. */
   genreShare: 0.35,
+  /** Umbrella genres (see BROAD_GENRES) count half, and only when no specific tag matches. */
+  broadGenreFactor: 0.5,
 } as const;
 
 export const REACH = { freeKm: 50, freeLoss: 0.1, breakKm: 300, atBreak: 0.4, decayKm: 200, unknown: 0.5 } as const;
@@ -50,13 +53,23 @@ export type ProfileIndex = {
   adjacentTags: Map<string, string>; // tag -> via
 };
 
+/** Profile tags in the same normalised form as event genres ("hip hop" and "hip-hop" are one tag). */
+function tagIndex(tags: TasteProfile["topTags"]): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const t of tags) {
+    const g = normalizeGenre(t.tag);
+    if (g) out.set(g, Math.max(out.get(g) ?? 0, t.weight));
+  }
+  return out;
+}
+
 export function buildProfileIndex(p: TasteProfile, topTagCount = 25): ProfileIndex {
   const maxW = Math.max(1e-9, ...p.topArtists.map((a) => a.weight));
   return {
     direct: new Map(p.topArtists.map((a) => [normalizeName(a.artist.name), { name: a.artist.name, plays: a.plays, weight: a.weight / maxW }])),
     similar: new Map(p.adjacentArtists.map((a) => [normalizeName(a.artist.name), { name: a.artist.name, via: a.via, match: a.match }])),
     dormant: new Map(p.dormantArtists.map((a) => [normalizeName(a.artist.name), { name: a.artist.name, period: a.lastHeavyPeriod }])),
-    tags: new Map(p.topTags.slice(0, topTagCount).map((t) => [t.tag, t.weight])),
+    tags: tagIndex(p.topTags.slice(0, topTagCount)),
     adjacentTags: new Map(p.adjacentTags.map((t) => [t.tag, t.via])),
   };
 }
@@ -67,7 +80,8 @@ export type EventMatch = {
   direct: { name: string; plays: number; weight: number; headliner: boolean }[];
   similar: { name: string; via: string; match: number; headliner: boolean }[];
   dormant: { name: string; period: string }[];
-  genres: { tag: string; weight: number }[];
+  /** `artist` names the act whose tags matched; undefined when only the event's own classification matched. */
+  genres: { tag: string; weight: number; artist?: string; broad: boolean }[];
   adjacentGenres: { tag: string; via: string }[];
 };
 
@@ -86,15 +100,26 @@ export function matchEvent(e: MusicEvent, idx: ProfileIndex): EventMatch | null 
     const z = idx.dormant.get(k);
     if (z) m.dormant.push(z);
   }
-  const eventGenres = new Set([...e.genres, ...acts.flatMap((l) => l.artist.genres)]);
-  for (const g of eventGenres) {
-    const w = idx.tags.get(g);
-    if (w !== undefined) m.genres.push({ tag: g, weight: w });
-    else {
-      const via = idx.adjacentTags.get(g);
-      if (via) m.adjacentGenres.push({ tag: g, via });
+  // Artist-level tags first (headliner before support), then the event's own classification.
+  const sources: { tags: string[]; artist?: string }[] = [
+    ...[...acts].sort((a, b) => Number(b.role === "headliner") - Number(a.role === "headliner")).map((l) => ({ tags: l.artist.genres, artist: l.artist.name })),
+    { tags: e.genres },
+  ];
+  const seen = new Set<string>();
+  for (const src of sources) {
+    for (const g of src.tags) {
+      if (seen.has(g)) continue;
+      seen.add(g);
+      const w = idx.tags.get(g);
+      const broad = BROAD_GENRES.has(g);
+      if (w !== undefined) m.genres.push({ tag: g, weight: broad ? w * PROFILE.broadGenreFactor : w, artist: src.artist, broad });
+      else if (!broad) {
+        const via = idx.adjacentTags.get(g);
+        if (via) m.adjacentGenres.push({ tag: g, via });
+      }
     }
   }
+  if (m.genres.some((g) => !g.broad)) m.genres = m.genres.filter((g) => !g.broad);
   m.genres.sort((a, b) => b.weight - a.weight);
   const any = m.direct.length || m.similar.length || m.dormant.length || m.genres.length || m.adjacentGenres.length;
   return any ? m : null;
@@ -177,7 +202,7 @@ export function deriveReasons(e: MusicEvent, m: EventMatch, pm: ReturnType<typeo
     const s = [...m.similar].sort((a, b) => b.match - a.match)[0];
     reasons.push({ type: "similar-artist", artist: s.name, via: s.via });
   }
-  if (pm.source === "genre" && m.genres[0]) reasons.push({ type: "genre-match", tag: m.genres[0].tag });
+  if (pm.source === "genre" && m.genres[0]) reasons.push({ type: "genre-match", tag: m.genres[0].tag, artist: m.genres[0].artist });
   if (disc > 0 && m.adjacentGenres[0] && !directs.length) {
     reasons.push({ type: "adjacent-genre", tag: m.adjacentGenres[0].tag, via: m.adjacentGenres[0].via });
   }

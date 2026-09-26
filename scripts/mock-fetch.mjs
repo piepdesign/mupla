@@ -47,7 +47,8 @@ function lastfm(url) {
     }
     case "artist.getTopTags": {
       const a = artists.find(([n]) => n.toLowerCase() === name);
-      const tags = a ? a[2] : ["electronic"];
+      const other = { glasfaser: ["ambient", "idm"], morgengrau: ["dream pop", "shoegaze"], wellenreiter: ["indietronica", "synthpop"], "stille post": ["post-rock"], "kapelle querfeld": ["polka", "folk"], "unbekannte band ohne bezug": ["techno"] };
+      const tags = a ? a[2] : (other[name] ?? ["electronic"]);
       return json({ toptags: { tag: [...tags, "seen live"].map((t, i) => ({ name: t, count: 100 - i * 20 })) } });
     }
     case "artist.getSimilar":
@@ -121,7 +122,11 @@ globalThis.fetch = async (input, init) => {
   if (url.host === "ws.audioscrobbler.com") return lastfm(url);
   if (url.host === "musicbrainz.org") return json(url.pathname.endsWith("/artist") ? { artists: [] } : { genres: [] });
   if (url.host === "app.ticketmaster.com") return ticketmaster(url);
-  if (url.host === "nominatim.openstreetmap.org") return json([]);
+  if (url.host === "nominatim.openstreetmap.org") {
+    const q = (url.searchParams.get("q") ?? "").toLowerCase();
+    const hit = q && cities.find(([c]) => c.toLowerCase().startsWith(q));
+    return json(hit ? [{ lat: String(hit[1]), lon: String(hit[2]), name: hit[0], display_name: `${hit[0]}, Deutschland` }] : []);
+  }
   return realFetch(input, init);
 };
 console.log("[mupla] mock-fetch aktiv: fiktive Daten, keine echten API-Aufrufe.");

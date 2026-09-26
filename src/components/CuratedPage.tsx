@@ -2,11 +2,13 @@ import Link from "next/link";
 import type { ViewSlug } from "@/domain/views";
 import { getCurationData } from "@/server/curation";
 import { homeFromEnv } from "@/server/settings";
-import { Curator } from "./Curator";
+import { Dashboard } from "./Dashboard";
+import { ViewDetail } from "./ViewDetail";
 import { ProviderNotice } from "./ProviderNotice";
 
 /** Server wrapper shared by all views: loads data once, hands candidates to the client curator. */
-export async function CuratedPage({ view, search = false }: { view: ViewSlug; search?: boolean }) {
+/** `view` undefined renders the dashboard. */
+export async function CuratedPage({ view, search = false }: { view?: ViewSlug; search?: boolean }) {
   const data = await getCurationData();
 
   if (!data.ok) {
@@ -28,23 +30,30 @@ export async function CuratedPage({ view, search = false }: { view: ViewSlug; se
   }
 
   const home = homeFromEnv();
+  const props = {
+    candidates: data.candidates,
+    now: new Date().toISOString(),
+    defaultHome: { label: "Gießen", ...home },
+    ledgerCreatedAt: data.ledgerCreatedAt,
+    profileGenres: data.topTags.map((t) => t.tag),
+    allGenres: [...new Set([...data.topTags.map((t) => t.tag), ...data.allGenres])],
+  };
   return (
     <>
       <ProviderNotice providers={data.providers} />
-      <p className="text-sm text-fg-muted">
-        {data.candidates.length} von {data.totalEvents} Terminen haben einen Bezug zum Hörprofil von <strong className="text-fg">{data.username}</strong>.
+      {view === undefined ? (
+        <Dashboard {...props} />
+      ) : (
+        <ViewDetail
+          {...props}
+          view={view}
+          unrelated={search ? data.unrelated : undefined}
+          heading={search ? { label: "Search", question: "Was suchst du, auch jenseits deines Profils?" } : undefined}
+        />
+      )}
+      <p className="text-xs text-fg-muted">
+        {data.candidates.length} von {data.totalEvents} geladenen Terminen haben einen Bezug zum Hörprofil von {data.username}.
       </p>
-      <Curator
-        view={view}
-        candidates={data.candidates}
-        now={new Date().toISOString()}
-        defaultHome={{ label: "Gießen", ...home }}
-        ledgerCreatedAt={data.ledgerCreatedAt}
-        profileGenres={data.topTags.map((t) => t.tag)}
-        allGenres={[...new Set([...data.topTags.map((t) => t.tag), ...data.allGenres])]}
-        unrelated={search ? data.unrelated : undefined}
-        heading={search ? { label: "Suche", question: "Was suchst du, auch jenseits deines Profils?" } : undefined}
-      />
     </>
   );
 }

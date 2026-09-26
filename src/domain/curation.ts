@@ -1,5 +1,5 @@
 import type { MusicEvent, Recommendation } from "./types";
-import type { ViewSlug } from "./views";
+import { SPANS, type Span, type ViewSlug } from "./views";
 import { scoreMatch, type EventMatch, type ScoreSettings } from "./scoring";
 
 /**
@@ -12,13 +12,15 @@ export type CurationContext = ScoreSettings & {
   /** When the first-seen ledger started. Events seen in that first run are not "new". */
   ledgerCreatedAt?: string;
   favoriteEventIds?: Set<string>;
+  /** Timeframe view only. */
+  span?: Span;
 };
 
 export const VIEW_RULES = {
   newWithinDays: 21,
   newFirstEditionYears: 1,
   lastChanceDays: 14,
-  grenzgaengerMinDiscovery: 0.7,
+  offTheGridMinDiscovery: 0.7,
 } as const;
 
 const DAY = 86_400_000;
@@ -88,18 +90,15 @@ export function applyView(slug: ViewSlug, cands: Candidate[], ctx: CurationConte
         note: "Kein freier Dienst liefert ein Ankündigungsdatum. „Neu“ heißt hier: seit mupla den Termin zum ersten Mal gesehen hat (höchstens drei Wochen), oder Erstausgabe laut deiner eigenen Liste.",
       };
     }
-    case "this-week":
-      return { items: strip(score(cands, ctx).filter((r) => withinDays(r, now, 7)).sort(byScore)) };
-    case "this-month":
-      return { items: strip(score(cands, ctx).filter((r) => withinDays(r, now, 30)).sort(byScore)) };
-    case "this-year": {
-      const end = Date.UTC(now.getUTCFullYear() + 1, 0, 1);
+    case "timeframe": {
+      const span = SPANS.find((x) => x.key === ctx.span) ?? SPANS[0];
+      const end = span.days !== undefined ? now.getTime() + span.days * DAY : Date.UTC(now.getUTCFullYear() + 1, 0, 1);
       return { items: strip(score(cands, ctx).filter((r) => Date.parse(r.event.startsAt) < end).sort(byScore)) };
     }
-    case "festivals":
+    case "season":
       return { items: strip(score(cands, ctx).filter((r) => r.event.kind === "festival").sort(byScore)) };
-    case "grenzgaenger": {
-      const bold = { ...ctx, discoveryLevel: Math.max(ctx.discoveryLevel, VIEW_RULES.grenzgaengerMinDiscovery) };
+    case "off-the-grid": {
+      const bold = { ...ctx, discoveryLevel: Math.max(ctx.discoveryLevel, VIEW_RULES.offTheGridMinDiscovery) };
       return {
         items: strip(
           score(cands, bold)
@@ -108,9 +107,9 @@ export function applyView(slug: ViewSlug, cands: Candidate[], ctx: CurationConte
         ),
       };
     }
-    case "wiedersehen":
+    case "rewind":
       return { items: strip(score(cands, ctx).filter((r) => r.reasons.some((x) => x.type === "dormant-artist")).sort(byScore)) };
-    case "letzte-chance":
+    case "last-chance":
       return {
         items: strip(
           score(cands, ctx)
@@ -120,7 +119,7 @@ export function applyView(slug: ViewSlug, cands: Candidate[], ctx: CurationConte
         ),
         note: "Ob noch Tickets da sind, meldet keine freie Quelle verlässlich. Hier steht, was in den nächsten zwei Wochen stattfindet und nicht als ausverkauft oder abgesagt gemeldet ist.",
       };
-    case "favoriten":
+    case "favorites":
       return {
         items: strip(score(cands, { ...ctx, discoveryLevel: 1 }).filter((r) => ctx.favoriteEventIds?.has(r.event.id)).sort(byDate)),
       };

@@ -6,9 +6,8 @@ import "@fontsource/uncut-sans/latin-600.css";
 import "@fontsource/uncut-sans/latin-700.css";
 import "@fontsource-variable/archivo/wdth.css";
 import "./globals.css";
-import { ThemeToggle, themeBootScript } from "@/components/ThemeToggle";
-import { ToolNav } from "@/components/ToolNav";
-import { ViewNav } from "@/components/ViewNav";
+import { SiteHeader } from "@/components/SiteHeader";
+import { themeBootScript } from "@/components/ThemeToggle";
 
 export const metadata: Metadata = {
   title: "mupla",
@@ -29,22 +28,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Zum Inhalt springen
         </a>
 
-        <header className="border-b border-border">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <Link href="/" className="display inline-flex min-h-11 items-center text-[2rem] leading-none" aria-label="mupla, Startseite">
-                mupla
-              </Link>
-              <div className="flex flex-wrap items-center gap-2">
-                <ToolNav />
-                <ThemeToggle />
-              </div>
-            </div>
-            <ViewNav />
-          </div>
-        </header>
+        <SiteHeader />
 
-        <main id="inhalt" tabIndex={-1} className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 focus:outline-none sm:px-6">
+        <main id="inhalt" tabIndex={-1} className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-8 px-4 py-6 focus:outline-none sm:px-6">
           {children}
         </main>
 
