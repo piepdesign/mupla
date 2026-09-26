@@ -84,15 +84,18 @@ function kindFor(title: string, path: string[]): EventKind {
 /** Generic rubric words that say nothing about genre. */
 const GENERIC = /^(musik|music|musique|konzerte?|concerts?|festivals?|partys?|parties|party|clubbing|nightlife|diverse|andere|other|autres?|divers|(sonstige|weitere|andere)\b.*)$/i;
 
+/** Party occasions, not genres (seen in live data 2026-09-26: Studentenparty, Halloween, Mottoparty). */
+const OCCASION = /party$|partys$|halloween|motto|fasching|karneval|fastnacht|silvester|oktoberfest|ü\s?\d\d/i;
+
 /**
  * Genre tags from the most specific rubric title only: "Rock / Pop" -> ["rock", "pop"].
  * Parent titles ("Konzerte", "Partys") are categories, not genres.
  */
 export function genresFromRubrics(path: string[]): string[] {
-  const leaf = path[0];
+  const leaf = path[0]?.replace(/singer\s*\/\s*songwriter/i, "singer-songwriter");
   if (!leaf) return [];
   const parts = leaf.split(/\s*[/&,+]\s*|\s+und\s+|\s+and\s+/i).map((p) => p.trim());
-  return normalizeGenres(parts.filter((p) => p && !GENERIC.test(p)));
+  return normalizeGenres(parts.filter((p) => p && !GENERIC.test(p) && !OCCASION.test(p)));
 }
 
 /**

@@ -76,6 +76,9 @@ describe("rubrics", () => {
     expect(genresFromRubrics(["Sonstige Partys", "Party"])).toEqual([]);
     expect(genresFromRubrics(["Weitere Musikrichtungen", "Konzerte"])).toEqual([]);
     expect(genresFromRubrics(["Jazz / Blues", "Konzerte"])).toEqual(["jazz", "blues"]);
+    expect(genresFromRubrics(["Singer / Songwriter", "Konzerte"])).toEqual(["singer-songwriter"]);
+    expect(genresFromRubrics(["Studentenparty", "Party"])).toEqual([]);
+    expect(genresFromRubrics(["Halloween", "Party"])).toEqual([]);
   });
 });
 
