@@ -138,9 +138,22 @@ function efEvent(i, title, rubricId, loc, daysAhead, extra = {}) {
     id: String(7000 + i), title: { de: title }, url: `https://eventfrog.ch/de/p/demo-${i}`, rubricId, locationIds: [String(900 + loc)],
     begin: start.toISOString(), end: new Date(start.getTime() + 5 * 3600_000).toISOString(),
     cancelled: false, soldOut: false, littleTicketsLeft: false, agendaEntryOnly: false, visible: true, published: true,
+    emblemToShow: i % 2 ? { url: `https://cdn.eventfrog.net/demo/${i}.png`, width: 800, height: 400 } : null,
+    emblemCredits: i % 2 ? `Foto: Beispielfotograf*in ${i}` : undefined,
     lowestTicketPrice: 12 + i, presaleLink: `https://tickets.eventfrog.ch/demo-${i}`, ...extra,
   };
 }
+// Solid-colour PNG, built at runtime so the mock needs no binary files.
+import { deflateSync } from "node:zlib";
+function png(w, h, [r, g, b]) {
+  const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc = (buf) => { let c = 0xffffffff; for (const x of buf) c = crcTable[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (type, data) => { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([len, td, c]); };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2;
+  const row = Buffer.concat([Buffer.from([0]), Buffer.from(Array.from({ length: w }, () => [r, g, b]).flat())]);
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(Buffer.concat(Array(h).fill(row)))), chunk("IEND", Buffer.alloc(0))]);
+}
+
 function eventfrog(url) {
   if (url.pathname.endsWith("/rubrics")) return json({ rubrics: efRubrics, totalNumberOfResources: efRubrics.length });
   if (url.pathname.endsWith("/locations")) {
@@ -164,6 +177,10 @@ globalThis.fetch = async (input, init) => {
   if (url.host === "musicbrainz.org") return json(url.pathname.endsWith("/artist") ? { artists: [] } : { genres: [] });
   if (url.host === "app.ticketmaster.com") return ticketmaster(url);
   if (url.host === "api.eventfrog.net") return eventfrog(url);
+  if (url.host === "cdn.eventfrog.net") {
+    const i = Number(url.pathname.match(/(\d+)\.png$/)?.[1] ?? 0);
+    return new Response(png(80, 40, [[40, 90, 160], [160, 60, 90], [30, 120, 80]][i % 3]), { headers: { "content-type": "image/png" } });
+  }
   if (url.host === "nominatim.openstreetmap.org") {
     const q = (url.searchParams.get("q") ?? "").toLowerCase();
     const hit = q && cities.find(([c]) => c.toLowerCase().startsWith(q));

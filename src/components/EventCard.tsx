@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CardImage } from "./CardImage";
 import type { Recommendation } from "@/domain/types";
 import type { Accent, TextAccent } from "@/design/tokens";
 import { renderReason } from "@/domain/reasons";
@@ -34,8 +35,7 @@ export function EventCard({
     <article aria-labelledby={headingId} className="flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface">
       {e.imageUrl ? (
         // Provider images vary in quality; the card must work without them.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={e.imageUrl} alt="" className="aspect-[2/1] w-full object-cover" />
+        <CardImage src={e.imageUrl} credit={e.imageCredit} fallback={<GeneratedArt pair={pair} label={e.title} />} />
       ) : (
         <GeneratedArt pair={pair} label={e.title} />
       )}

@@ -1,6 +1,7 @@
 import "server-only";
 import { mapEventfrogEvent, musicRubricIds, parseLocations, parseRubrics, type EfLocation, type EfRubric } from "@/domain/mappers/eventfrog";
 import type { MusicEvent } from "@/domain/types";
+import { isAllowedImageSource } from "@/lib/images";
 import { DAY, HOUR, cached } from "../cache";
 import { HttpError, throttledFetch } from "../http";
 import type { EventProvider, EventQuery, ProviderResult } from "./types";
@@ -92,6 +93,18 @@ export const eventfrog: EventProvider = {
     if (sweep.total > sweep.events.length) {
       warnings.push(`Eventfrog meldet ${sweep.total} Termine im Umkreis, abgerufen wurden ${sweep.events.length}. Der Rest fehlt, welche genau, legt Eventfrog fest.`);
     }
+
+    // Image hosts outside the allowlist in src/lib/images.ts are skipped; name them so the list can be extended.
+    const foreign = new Set<string>();
+    for (const raw of sweep.events) {
+      const src = (raw.emblemToShow as { url?: unknown } | null)?.url;
+      if (typeof src === "string" && !isAllowedImageSource(src)) {
+        try {
+          foreign.add(new URL(src).hostname);
+        } catch {}
+      }
+    }
+    if (foreign.size) warnings.push(`Eventfrog-Bilder von nicht freigegebenen Hosts ausgelassen: ${[...foreign].slice(0, 5).join(", ")}.`);
 
     const locMap = new Map(sweep.locations.map((l) => [l.id, l]));
     const rubricMap = new Map<number, EfRubric>(tree.map((r) => [r.id, r]));

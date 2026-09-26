@@ -31,8 +31,9 @@ export default function Sources() {
         <p>
           Festivals, Partys und kleinere Veranstaltungen, sofern ein Key eingetragen ist:{" "}
           <a href="https://eventfrog.ch" {...ext}>Eventfrog{newTab}</a> Public API. Der Schwerpunkt liegt in der Schweiz, in
-          Deutschland ist die Auswahl kleiner. Bilder von Eventfrog zeigt mupla nicht, weil die Schnittstelle direktes Einbinden
-          untersagt.
+          Deutschland ist die Auswahl kleiner. Eventfrog-Bilder lädt der lokale Server einmal herunter und
+          speichert sie in <code>.cache/img/</code>, weil die Schnittstelle direktes Einbinden untersagt. Die Bildnachweise stehen
+          auf den Karten.
         </p>
         <p>
           Ortskoordinaten für Venues ohne eigene Angabe: Nominatim, Daten ©{" "}

@@ -1,6 +1,7 @@
 import type { EventKind, EventStatus, MusicEvent, PriceRange, SourceRef, Venue } from "../types";
 import { estimateSize, normalizeCountry, normalizeGenres } from "../normalize";
 import { isValidLatLon } from "@/lib/geo";
+import { localImageUrl } from "@/lib/images";
 
 /**
  * Eventfrog Public API v1 -> MusicEvent.
@@ -10,7 +11,8 @@ import { isValidLatLon } from "@/lib/geo";
  *          visible, published, rubricId, locationIds[], locationAlias{lang}, lowestTicketPrice, presaleLink
  *   Location: id, title{lang}, city, country (alpha-2), lat, lng, zip
  *   EventRubric: id, parentId (0 = none), title{lang}
- * Not used: emblemToShow. The docs forbid hotlinking image URLs; cards fall back to generated art.
+ * Images (emblemToShow, emblemCredits): the docs forbid hotlinking, so imageUrl points at the local
+ * /api/image route, which downloads the file once and serves the stored copy.
  */
 
 type Obj = Record<string, unknown>;
@@ -205,6 +207,8 @@ export function mapEventfrogEvent(
     sizeEstimated: estimated,
     status: status(raw),
     officialTicketUrl: s(raw.presaleLink) ?? url,
+    imageUrl: localImageUrl(s(o(raw.emblemToShow).url)),
+    imageCredit: s(raw.emblemCredits),
     sources: src("event", id, url),
   };
 }

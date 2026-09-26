@@ -72,6 +72,8 @@ export type MusicEvent = {
   officialTicketUrl?: string;
   merchUrl?: string;
   imageUrl?: string;
+  /** Credit line the provider asks to show with the image. */
+  imageCredit?: string;
   announcedAt?: string;
   /** First time mupla saw this event. Approximates "newly announced" (no provider has an announcement date). */
   firstSeenAt?: string;

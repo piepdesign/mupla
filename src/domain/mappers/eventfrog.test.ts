@@ -127,6 +127,14 @@ describe("mapEventfrogEvent", () => {
     expect(agenda.officialTicketUrl).toBe("https://eventfrog.ch/de/p/1");
   });
 
+  it("serves images through the local image route and keeps the credit", () => {
+    const e = map({ emblemToShow: { url: "https://cdn.eventfrog.net/img/1.jpg", width: 800, height: 600 }, emblemCredits: "Foto: Jane Doe" })!;
+    expect(e.imageUrl).toBe("/api/image?src=https%3A%2F%2Fcdn.eventfrog.net%2Fimg%2F1.jpg");
+    expect(e.imageCredit).toBe("Foto: Jane Doe");
+    expect(map({ emblemToShow: { url: "https://example.com/1.jpg" } })!.imageUrl).toBeUndefined();
+    expect(map({ emblemToShow: null })!.imageUrl).toBeUndefined();
+  });
+
   it("uses the location alias as venue name", () => {
     expect(map({ locationAlias: { de: "Hauptbühne" } })!.venue.name).toBe("Hauptbühne");
   });

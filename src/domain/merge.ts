@@ -63,6 +63,7 @@ export function mergePair(a: MusicEvent, b: MusicEvent): MusicEvent {
     officialTicketUrl: win.officialTicketUrl ?? lose.officialTicketUrl,
     merchUrl: win.merchUrl ?? lose.merchUrl,
     imageUrl: win.imageUrl ?? lose.imageUrl,
+    imageCredit: win.imageUrl ? win.imageCredit : lose.imageCredit,
     announcedAt: win.announcedAt ?? lose.announcedAt,
     firstSeenAt: [win.firstSeenAt, lose.firstSeenAt].filter(Boolean).sort()[0],
     firstEditionYear: win.firstEditionYear ?? lose.firstEditionYear,
