@@ -1,7 +1,7 @@
 import "server-only";
 import { buildProfileIndex, matchEvent } from "@/domain/scoring";
 import type { Candidate } from "@/domain/curation";
-import type { TasteProfile } from "@/domain/types";
+import type { MusicEvent, TasteProfile } from "@/domain/types";
 import { getEvents, type EventsResult } from "./events";
 import { getTasteProfile, type ProfileDiagnostics } from "./profile";
 import { getArtistListeners } from "./providers/lastfm";
@@ -23,6 +23,11 @@ export type CurationData =
       profileBuiltAt: string;
       profileDiagnostics: ProfileDiagnostics;
       topTags: TasteProfile["topTags"];
+      profile: TasteProfile;
+      /** Events without any profile relation (search page, artist pages). */
+      unrelated: MusicEvent[];
+      /** All genres seen on loaded events, sorted, for searching beyond the profile. */
+      allGenres: string[];
     };
 
 /**
@@ -51,9 +56,14 @@ export async function getCurationData(): Promise<CurationData> {
 
   const idx = buildProfileIndex(profile);
   const candidates: Candidate[] = [];
+  const unrelated: MusicEvent[] = [];
+  const genres = new Set<string>();
   for (const event of events.events) {
     const match = matchEvent(event, idx);
     if (match) candidates.push({ event, match });
+    else unrelated.push(event);
+    for (const g of event.genres) genres.add(g);
+    for (const l of event.lineup) for (const g of l.artist.genres) genres.add(g);
   }
 
   // Listener counts for headliners with an artist match (Popular view).
@@ -83,5 +93,8 @@ export async function getCurationData(): Promise<CurationData> {
     profileBuiltAt: profile.builtAt,
     profileDiagnostics: diagnostics,
     topTags: profile.topTags.slice(0, 40),
+    profile,
+    unrelated,
+    allGenres: [...genres].sort((a, b) => a.localeCompare(b, "de")),
   };
 }

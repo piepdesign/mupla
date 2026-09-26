@@ -6,7 +6,7 @@ import { Curator } from "./Curator";
 import { ProviderNotice } from "./ProviderNotice";
 
 /** Server wrapper shared by all views: loads data once, hands candidates to the client curator. */
-export async function CuratedPage({ view }: { view: ViewSlug }) {
+export async function CuratedPage({ view, search = false }: { view: ViewSlug; search?: boolean }) {
   const data = await getCurationData();
 
   if (!data.ok) {
@@ -40,6 +40,10 @@ export async function CuratedPage({ view }: { view: ViewSlug }) {
         now={new Date().toISOString()}
         defaultHome={{ label: "Gießen", ...home }}
         ledgerCreatedAt={data.ledgerCreatedAt}
+        profileGenres={data.topTags.map((t) => t.tag)}
+        allGenres={[...new Set([...data.topTags.map((t) => t.tag), ...data.allGenres])]}
+        unrelated={search ? data.unrelated : undefined}
+        heading={search ? { label: "Suche", question: "Was suchst du, auch jenseits deines Profils?" } : undefined}
       />
     </>
   );

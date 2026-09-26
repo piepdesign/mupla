@@ -15,7 +15,15 @@ npm install
 cp .env.example .env.local
 ```
 
-Dann `.env.local` im Editor öffnen und die Werte eintragen (Keys, Last.fm-Name, Kontakt-E-Mail). Diese Datei wird nie ins Repo übernommen.
+Dann `.env.local` im Editor öffnen und die Werte eintragen. Diese Datei wird nie ins Repo übernommen (`.gitignore`), und die Keys werden nur auf dem Server gelesen, nie an den Browser geschickt.
+
+| Variable | Pflicht | Woher |
+|---|---|---|
+| `TICKETMASTER_API_KEY` | ja | https://developer-account.ticketmaster.com, „My Apps“, Consumer Key |
+| `LASTFM_API_KEY` | ja | https://www.last.fm/api/account/create, Feld „API key“ (Shared Secret wird nicht gebraucht) |
+| `LASTFM_USERNAME` | ja | dein Last.fm-Name |
+| `CONTACT` | empfohlen | deine E-Mail; steht im User-Agent, MusicBrainz und Nominatim verlangen einen Kontakt |
+| `HOME_LAT`, `HOME_LON` | nein | Heimatort, Standard ist Gießen; in der App auch pro Browser änderbar |
 
 ## Starten
 
@@ -25,16 +33,32 @@ Im Terminal, im Ordner `mupla`:
 npm run dev
 ```
 
-Dann im Browser http://localhost:3000 öffnen. Beenden mit `ctrl + c`.
+Dann im Browser http://localhost:3000 öffnen. Beenden mit `ctrl + c`. Der erste Aufruf dauert etwa eine Minute (Profilaufbau, MusicBrainz erlaubt nur eine Anfrage pro Sekunde), danach kommt alles aus dem Cache.
 
-## Hörprofil (Etappe 2)
+### Ohne Keys ausprobieren
 
-Mit `LASTFM_API_KEY` und `LASTFM_USERNAME` in `.env.local`:
+Im Terminal, im Ordner `mupla`, startet ein Modus mit fiktiven Daten (keine echte Schnittstelle wird angefragt):
+
+```bash
+npm run dev:mock
+```
+
+## Seiten
+
+| Adresse | Was |
+|---|---|
+| `/` und `/ansicht/…` | die 13 Ansichten, alle mit Filterleiste; Filter stehen in der URL und bleiben beim Ansichtswechsel |
+| `/suche` | freie Suche über Artist, Genre, Ort, Event; Treffer ohne Profilbezug stehen getrennt und ohne Rangfolge darunter |
+| `/artist/NAME` | Termine nach eigener Tour, Gastauftritt, Festival; Genres, Ähnliche, deine Hörhistorie |
+| `/profil` | gemerkte Termine, Favoriten, „Neu seit deinem letzten Besuch“, Export und Import als JSON |
+| `/quellen` | Datenquellen, Lizenzen, Datenschutz |
+| `/debug/profil`, `/debug/events` | Rohsicht auf Profil und Termine |
+| `/debug/gegenrechnung` | die zehn besten Empfehlungen mit Rechenweg, jede Begründung gegen die Score-Bestandteile geprüft |
+
+## Hörprofil
 
 - http://localhost:3000/debug/profil zeigt das fertige Profil: Gewichte, Genres, Nachbarschaften mit Herkunft, ruhende Artists, Warnungen. Ein anderer Name geht mit `?user=NAME`, ohne MusicBrainz mit `?mb=0`.
 - http://localhost:3000/api/profile liefert dasselbe als JSON.
-
-Der erste Aufbau dauert etwa eine Minute, weil MusicBrainz nur eine Anfrage pro Sekunde erlaubt. Danach kommt alles aus dem Cache.
 
 ### Caching
 
@@ -42,6 +66,7 @@ Abgerufene Daten liegen als JSON in `.cache/` (nicht im Repo). Haltbarkeiten:
 
 | Daten | Haltbarkeit | Warum |
 |---|---|---|
+| Termine je Quelle | 6 Stunden | Status (ausverkauft, abgesagt) soll aktuell sein, ohne das Tageslimit von Ticketmaster zu belasten |
 | Top-Artists, fertiges Profil | 12 Stunden | ändern sich über Tage, nicht Minuten; einmal am Tag frisch reicht |
 | Ähnliche Artists, Tags | 7 Tage | Last.fm berechnet sie aus dem Hörverhalten aller, das verschiebt sich langsam |
 | Abgeschlossene Jahrescharts | 365 Tage | vergangene Jahre ändern sich nicht mehr |
@@ -60,7 +85,7 @@ Alle Befehle im Terminal, im Ordner `mupla`:
 | Befehl | Was er prüft |
 |---|---|
 | `npm run contrast` | alle Farbpaare aus `src/design/tokens.ts` gegen WCAG 2.1 AA, bricht bei Verstoß oder bei Abweichung zwischen `tokens.ts` und `globals.css` ab |
-| `npm run a11y` | axe-Prüfung (WCAG 2.1 AA) aller Hauptseiten hell und dunkel, plus Tabreihenfolge. Braucht einen laufenden Server (`npm run build && npm start` in einem zweiten Terminalfenster) und Google Chrome |
+| `npm run a11y` | axe-Prüfung (WCAG 2.1 AA) der Hauptseiten hell und dunkel, plus Tabreihenfolge. Braucht einen laufenden Server in einem zweiten Terminalfenster (`npm run dev` oder `npm run dev:mock`) und Google Chrome; Adresse über `BASE_URL=http://localhost:3000`, Seiten über `A11Y_PAGES=/,/suche,/profil` |
 | `npm test` | Unit-Tests |
 | `npm run typecheck` | TypeScript |
 | `npm run lint` | ESLint |
@@ -74,8 +99,18 @@ Alle Befehle im Terminal, im Ordner `mupla`:
 | `src/app/` | Seiten und Server-Routen (Next.js App Router) |
 | `src/components/` | UI-Bausteine: Eventkarte, Regal, Navigation |
 | `src/design/tokens.ts` | Farbtokens und die Regel, welche Textfarbe auf welcher Akzentfarbe stehen darf |
-| `src/domain/` | Datenmodell (Typen), Ansichten, Begründungstexte |
-| `src/data/` | Beispieldaten |
-| `src/lib/` | Formatierung (Datum, Preis, Entfernung) |
-| `scripts/` | Kontrast- und Barrierefreiheitsprüfung |
+| `src/domain/` | reine Logik ohne Netz: Datenmodell, Normalisierung, Zusammenführung, Scoring, Begründungen, Ansichten, Filter |
+| `src/server/` | alles mit Keys und Netz: Last.fm, MusicBrainz, Ticketmaster, Nominatim, Cache |
+| `src/data/` | Beispieldaten für `/beispiel` |
+| `src/lib/` | Formatierung, Favoriten im Browser-Speicher, Links |
+| `data/` | eigene Terminliste und ICS-Kalender als weitere Quellen (Format in `data/README.md`) |
+| `scripts/` | Kontrast- und Barrierefreiheitsprüfung, Offline-Testdaten |
 | `LIZENZEN.md` | Lizenzen aller Schriften und Datenquellen |
+
+## Grenzen der Stufe 1
+
+- Nur ein Profil (deins), Favoriten nur in diesem Browser. Kein Konto, keine Cloud, keine Benachrichtigungen, kein Blend.
+- Einzige freie Eventquelle mit Schnittstelle ist Ticketmaster. Clubkonzerte fehlen weitgehend; die eigene Liste `data/curated-events.json` und ICS-Kalender füllen das nur von Hand.
+- „New“ heißt „von mupla zum ersten Mal gesehen“, nicht „angekündigt am“: keine Quelle liefert ein Ankündigungsdatum. Der erste Lauf füllt „New“ deshalb nicht.
+- Preise und Venue-Größen fehlen oft oder sind geschätzt; die App sagt es an der Karte.
+- Last.fm erlaubt die Nutzung ohne Rückfrage nur nicht-kommerziell; für eine öffentliche Version braucht es eine schriftliche Zusage. MusicBrainz-Genres stehen unter CC BY-NC-SA.

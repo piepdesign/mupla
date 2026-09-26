@@ -7,6 +7,7 @@ import "@fontsource/uncut-sans/latin-700.css";
 import "@fontsource-variable/archivo/wdth.css";
 import "./globals.css";
 import { ThemeToggle, themeBootScript } from "@/components/ThemeToggle";
+import { ToolNav } from "@/components/ToolNav";
 import { ViewNav } from "@/components/ViewNav";
 
 export const metadata: Metadata = {
@@ -34,7 +35,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/" className="display text-[2rem] leading-none" aria-label="mupla, Startseite">
                 mupla
               </Link>
-              <ThemeToggle />
+              <div className="flex flex-wrap items-center gap-2">
+                <ToolNav />
+                <ThemeToggle />
+              </div>
             </div>
             <ViewNav />
           </div>

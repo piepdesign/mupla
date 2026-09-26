@@ -6,9 +6,11 @@ import {
   collectAdjacentTags,
   findDormant,
   key,
+  TAG_BLOCKLIST,
   weightTopArtists,
   yearRanges,
 } from "@/domain/profile";
+import { normalizeGenres } from "@/domain/normalize";
 import { DAY, HOUR, cached } from "./cache";
 import * as lastfm from "./providers/lastfm";
 import * as mb from "./providers/musicbrainz";
@@ -45,6 +47,11 @@ function lfSource(name: string, url?: string): SourceRef[] {
       fetchedAt: new Date().toISOString(),
     },
   ];
+}
+
+/** Last.fm tags as artist genres: without personal tags like "seen live", normalised like event genres. */
+function artistGenresFromTags(tags: { name: string }[]): string[] {
+  return normalizeGenres(tags.map((t) => t.name).filter((n) => n && !TAG_BLOCKLIST.has(n))).slice(0, 5);
 }
 
 function toArtist(a: { name: string; mbid?: string; url?: string }, genres: string[] = []): Artist {
@@ -149,7 +156,7 @@ async function buildTasteProfile(username: string, withMb: boolean): Promise<{ p
     username,
     builtAt: new Date().toISOString(),
     topArtists: weighted.map((a) => ({
-      artist: toArtist(a, genresByKey.get(key(a.name)) ?? (tagsByArtist.get(key(a.name)) ?? []).slice(0, 5).map((t) => t.name)),
+      artist: toArtist(a, genresByKey.get(key(a.name)) ?? artistGenresFromTags(tagsByArtist.get(key(a.name)) ?? [])),
       plays: a.plays,
       weight: a.weight,
     })),

@@ -1,6 +1,9 @@
 import type { Recommendation } from "@/domain/types";
 import type { Accent, TextAccent } from "@/design/tokens";
 import { renderReason } from "@/domain/reasons";
+import Link from "next/link";
+import { artistHref } from "@/lib/links";
+import { ExternalLink } from "./ExternalLink";
 import { formatDistance, formatDuration, formatEventDate, formatPrice, sizeLabel, statusLabel } from "@/lib/format";
 import { FavoriteToggle } from "./FavoriteToggle";
 import { GeneratedArt } from "./GeneratedArt";
@@ -81,7 +84,11 @@ export function EventCard({
           {rec.reasons.map((r, i) => (
             <p key={i} className="text-lg leading-snug">
               {renderReason(r).map((s, j) =>
-                s.strong ? (
+                s.artist ? (
+                  <Link key={j} href={artistHref(s.text)} className="font-bold underline decoration-1 underline-offset-2 hover:decoration-2">
+                    {s.text}
+                  </Link>
+                ) : s.strong ? (
                   <strong key={j} className="font-bold">
                     {s.text}
                   </strong>
@@ -96,16 +103,14 @@ export function EventCard({
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
           <FavoriteToggle label={e.title} state={favorite} />
           {e.officialTicketUrl && (
-            <a
-              href={e.officialTicketUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center gap-1.5 rounded bg-fg px-4 text-sm font-semibold text-bg hover:opacity-90"
-            >
+            <ExternalLink href={e.officialTicketUrl} context={`Tickets für ${e.title}, offizieller Verkauf`} primary>
               Tickets
-              <span aria-hidden="true">↗</span>
-              <span className="sr-only"> für {e.title} (offizieller Verkauf, externer Link, neuer Tab)</span>
-            </a>
+            </ExternalLink>
+          )}
+          {e.merchUrl && (
+            <ExternalLink href={e.merchUrl} context={`offizieller Merch zu ${e.title}`}>
+              Merch
+            </ExternalLink>
           )}
         </div>
         {showScore && <ScoreBreakdown rec={rec} />}

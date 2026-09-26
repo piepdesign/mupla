@@ -28,6 +28,10 @@ export default function Sources() {
           offiziellen Verkauf. Clubkonzerte sind unvollständig, weil es für Eventim, Reservix und Resident Advisor keine freie
           Schnittstelle gibt.
         </p>
+        <p>
+          Ortskoordinaten für Venues ohne eigene Angabe: Nominatim, Daten ©{" "}
+          <a href="https://www.openstreetmap.org/copyright" {...ext}>OpenStreetMap-Mitwirkende, ODbL{newTab}</a>.
+        </p>
       </section>
 
       <section aria-labelledby="q-schrift" className="flex flex-col gap-2">

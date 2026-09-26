@@ -1,4 +1,4 @@
-import type { Recommendation } from "@/domain/types";
+import type { MusicEvent, Recommendation } from "@/domain/types";
 import type { Accent, TextAccent } from "@/design/tokens";
 import { AccentSurface } from "./AccentSurface";
 import { EventCard } from "./EventCard";
@@ -26,7 +26,7 @@ export function Shelf({
   note?: string;
   showScore?: boolean;
   limit?: number;
-  favorites?: { isOn: (id: string) => boolean; toggle: (id: string) => void };
+  favorites?: { isOn: (e: MusicEvent) => boolean; toggle: (e: MusicEvent) => void };
   footer?: React.ReactNode;
 }) {
   const shown = limit ? items.slice(0, limit) : items;
@@ -50,7 +50,7 @@ export function Shelf({
                 rec={rec}
                 pair={pair}
                 showScore={showScore}
-                favorite={favorites ? { on: favorites.isOn(rec.event.id), toggle: () => favorites.toggle(rec.event.id) } : undefined}
+                favorite={favorites ? { on: favorites.isOn(rec.event), toggle: () => favorites.toggle(rec.event) } : undefined}
               />
             </li>
           ))}

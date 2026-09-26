@@ -106,6 +106,12 @@ function ticketmaster(url) {
     }),
     tmEvent(8, "Stille Post", 5, 80),
     tmEvent(9, "Polarlicht Kollektiv", 0, 9),
+    tmEvent(11, "Seegras", 5, 130),
+    tmEvent(12, "Orbit Chor", 2, 16),
+    tmEvent(13, "Lumen Delta", 3, 40),
+    tmEvent(14, "Wellenreiter", 0, 70),
+    // No profile relation at all: only visible on the search page under "Ohne Profilbezug".
+    tmEvent(10, "Kapelle Querfeld", 2, 25, { classifications: [{ segment: { name: "Music" }, genre: { name: "Folk" }, subGenre: { name: "Undefined" } }] }),
   ];
   return json({ _embedded: { events }, page: { size: 100, totalElements: events.length, totalPages: 1, number: 0 } });
 }
