@@ -10,7 +10,7 @@ export function ViewNav() {
 
   return (
     <nav aria-label="Ansichten">
-      <ul className="flex gap-1 overflow-x-auto pb-1">
+      <ul className="flex flex-wrap gap-1">
         {views.map((v) => {
           const active = v.slug === current;
           return (

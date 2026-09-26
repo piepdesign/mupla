@@ -1,4 +1,5 @@
 import type { Artist, Recommendation, Venue } from "@/domain/types";
+import { totalScore } from "@/domain/scoring";
 
 /**
  * Sample data for the design foundation (stage 1). Fictional artists and venues,
@@ -16,7 +17,7 @@ const halle = venue("v1", "Beispielhalle", "Frankfurt am Main", 50.11, 8.68, 500
 const club = venue("v2", "Club Muster", "Gießen", 50.58, 8.67, 400);
 const wiese = venue("v3", "Festivalwiese Nord", "Kassel", 51.31, 9.48);
 
-export const sampleRecommendations: Recommendation[] = [
+const raw: Recommendation[] = [
   {
     event: {
       id: "e1", kind: "tour-date", title: "Nachtfalter Orchester", startTimeKnown: true, startsAt: "2026-11-14T20:00:00+01:00",
@@ -25,7 +26,7 @@ export const sampleRecommendations: Recommendation[] = [
       size: "hall", status: "onsale", officialTicketUrl: "https://example.org/tickets/e1",
       imageUrl: undefined, sources: src("e1"),
     },
-    score: 0.86, distanceKm: 53,
+    score: 0, distanceKm: 53,
     components: { profileMatch: 1, reachability: 0.93, timing: 0.95, discovery: 0, priceFriction: 0 },
     reasons: [{ type: "direct-artist", artist: "Nachtfalter Orchester", plays: 412 }],
   },
@@ -37,7 +38,7 @@ export const sampleRecommendations: Recommendation[] = [
       size: "club", sizeEstimated: false, status: "presale", officialTicketUrl: "https://example.org/tickets/e2",
       sources: src("e2"),
     },
-    score: 0.71, distanceKm: 1.4,
+    score: 0, distanceKm: 1.4,
     components: { profileMatch: 0.62, reachability: 1, timing: 0.7, discovery: 0, priceFriction: 0 },
     reasons: [{ type: "similar-artist", artist: "Kiesel & Kobalt", via: "Nachtfalter Orchester" }],
   },
@@ -54,7 +55,7 @@ export const sampleRecommendations: Recommendation[] = [
       size: "festival", status: "onsale", officialTicketUrl: "https://example.org/tickets/e3",
       firstEditionYear: 2026, sources: src("e3"),
     },
-    score: 0.64, distanceKm: 141,
+    score: 0, distanceKm: 141,
     components: { profileMatch: 0.8, reachability: 0.55, timing: 0.4, discovery: 0, priceFriction: 0.1 },
     reasons: [{ type: "lineup-match", count: 3, examples: ["Nachtfalter Orchester", "Lumen Delta"] }],
   },
@@ -66,7 +67,7 @@ export const sampleRecommendations: Recommendation[] = [
       size: "hall", sizeEstimated: true, status: "soldout", officialTicketUrl: "https://example.org/tickets/e4",
       sources: src("e4"),
     },
-    score: 0.52, distanceKm: 53,
+    score: 0, distanceKm: 53,
     components: { profileMatch: 0.35, reachability: 0.93, timing: 0.9, discovery: 0.4, priceFriction: 0 },
     reasons: [{ type: "adjacent-genre", tag: "neoclassical", via: "ambient" }],
   },
@@ -78,8 +79,11 @@ export const sampleRecommendations: Recommendation[] = [
       size: "hall", status: "onsale", officialTicketUrl: "https://example.org/tickets/e5",
       sources: src("e5"),
     },
-    score: 0.48, distanceKm: 53,
+    score: 0, distanceKm: 53,
     components: { profileMatch: 0.5, reachability: 0.93, timing: 0.6, discovery: 0, priceFriction: 0 },
     reasons: [{ type: "dormant-artist", artist: "Die Fernen Freunde", period: "2024" }],
   },
 ];
+
+/** Scores are computed with the real formula, so the sample never shows a number the logic would not produce. */
+export const sampleRecommendations: Recommendation[] = raw.map((r) => ({ ...r, score: totalScore(r.components) }));
