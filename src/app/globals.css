@@ -131,7 +131,10 @@ body {
 }
 
 /* Focus ring: 2px, 2px offset, never removed. */
-:focus-visible {
+:focus-visible,
+/* Chromium focuses an inner segment of date inputs, so the input itself never matches :focus-visible. */
+input[type="date"]:focus,
+input[type="date"]:focus-within {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }

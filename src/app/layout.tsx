@@ -32,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className="border-b border-border">
           <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:px-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Link href="/" className="display text-[2rem] leading-none" aria-label="mupla, Startseite">
+              <Link href="/" className="display inline-flex min-h-11 items-center text-[2rem] leading-none" aria-label="mupla, Startseite">
                 mupla
               </Link>
               <div className="flex flex-wrap items-center gap-2">
