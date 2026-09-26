@@ -124,7 +124,7 @@ export function matchesQuery(r: Pick<Recommendation, "event">, q: string): boole
   const norm = (s: string) => s.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
   const needle = norm(q);
   const e = r.event;
-  const hay = [e.title, e.venue.name, e.venue.city, ...e.genres, ...e.lineup.map((l) => l.artist.name), ...e.lineup.flatMap((l) => l.artist.genres)];
+  const hay = [e.title, e.venue.name, e.venue.city, ...e.genres, ...e.lineup.map((l) => l.artist.name), ...e.lineup.flatMap((l) => [...l.artist.genres, ...(l.artist.tags ?? [])])];
   return hay.some((h) => norm(h).includes(needle));
 }
 
@@ -143,7 +143,7 @@ export function applyFilters<T extends Pick<Recommendation, "event" | "distanceK
     if (f.to && date > f.to) return false;
     if (f.weekdays.length && !f.weekdays.includes(weekday)) return false;
     if (f.genres.length) {
-      const g = new Set([...e.genres, ...e.lineup.flatMap((l) => l.artist.genres)]);
+      const g = new Set([...e.genres, ...e.lineup.flatMap((l) => [...l.artist.genres, ...(l.artist.tags ?? [])])]);
       if (!f.genres.some((x) => g.has(x))) return false;
     }
     return matchesQuery(r, f.q);

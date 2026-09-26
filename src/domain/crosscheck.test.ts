@@ -19,7 +19,7 @@ describe("crossCheck", () => {
   it("catches a wrong play count, a wrong sum and an unbacked genre", () => {
     const rec: Recommendation = {
       event, components, score: 0.9,
-      reasons: [{ type: "direct-artist", artist: "Bonobo", plays: 900 }, { type: "genre-match", tag: "polka" }],
+      reasons: [{ type: "direct-artist", artist: "Bonobo", plays: 900 }, { type: "genre-match", tag: "polka", source: "ticketmaster" }],
     };
     const failed = crossCheck(rec, match).filter((c) => !c.ok).map((c) => c.label);
     expect(failed).toHaveLength(3);

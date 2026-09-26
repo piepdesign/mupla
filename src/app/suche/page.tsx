@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
-import { CuratedPage } from "@/components/CuratedPage";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Suche · mupla" };
-
-export default function SearchPage() {
-  return <CuratedPage view="for-you" search />;
+/** The search lives on the overview now. Old links and bookmarks land there with their query kept. */
+export default async function SearchPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(await searchParams)) {
+    for (const x of Array.isArray(v) ? v : v !== undefined ? [v] : []) sp.append(k, x);
+  }
+  if (!sp.has("q") && !sp.has("genre")) sp.set("focus", "search");
+  redirect(`/?${sp.toString()}`);
 }

@@ -16,7 +16,10 @@ export type Artist = {
   id: string;
   name: string;
   mbid?: string;
+  /** Provider classification (Ticketmaster, Eventfrog, …). */
   genres: string[];
+  /** Last.fm listener tags, kept apart so a reason can name where a genre comes from. */
+  tags?: string[];
   listeners?: number;
   foundedYear?: number;
   imageUrl?: string;
@@ -99,12 +102,15 @@ export type ScoreComponents = {
   priceFriction: number;
 };
 
+/** Where a genre on an event comes from: Last.fm listener tags or the event provider's own classification. */
+export type GenreSource = "lastfm" | Provider;
+
 export type Reason =
   | { type: "direct-artist"; artist: string; plays: number }
   | { type: "similar-artist"; artist: string; via: string }
   | { type: "lineup-match"; count: number; examples: string[] }
-  | { type: "genre-match"; tag: string; artist?: string }
-  | { type: "adjacent-genre"; tag: string; via: string }
+  | { type: "genre-match"; tag: string; artist?: string; source: GenreSource }
+  | { type: "adjacent-genre"; tag: string; via: string; artist?: string; source: GenreSource }
   | { type: "dormant-artist"; artist: string; period: string };
 
 export type Recommendation = {

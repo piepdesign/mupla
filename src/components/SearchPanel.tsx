@@ -7,6 +7,9 @@ import { LocationField } from "./LocationField";
 import { SelectField } from "./SelectField";
 import { SearchIcon, SlidersIcon } from "./icons";
 
+/** The header's search button focuses this input. */
+export const SEARCH_INPUT_ID = "suche";
+
 const control = "min-h-11 rounded border border-control bg-bg px-3 text-fg";
 const group = "rounded border border-border";
 const summary = "flex min-h-11 cursor-pointer items-center px-3 text-sm font-medium";
@@ -83,6 +86,7 @@ export function SearchPanel({
           <span className="relative">
             <SearchIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-fg-muted" />
             <input
+              id={SEARCH_INPUT_ID}
               type="search"
               value={f.q}
               placeholder="Artist, Genre, Stadt, Event"

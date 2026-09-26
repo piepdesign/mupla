@@ -69,7 +69,7 @@ const raw: Recommendation[] = [
     },
     score: 0, distanceKm: 53,
     components: { profileMatch: 0.35, reachability: 0.93, timing: 0.9, discovery: 0.4, priceFriction: 0 },
-    reasons: [{ type: "adjacent-genre", tag: "neoclassical", via: "ambient" }],
+    reasons: [{ type: "adjacent-genre", tag: "neoclassical", via: "ambient", source: "lastfm", artist: "Orbit Chor" }],
   },
   {
     event: {

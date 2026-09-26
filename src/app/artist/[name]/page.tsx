@@ -56,7 +56,7 @@ export default async function ArtistPage({ params }: PageProps<"/artist/[name]">
     }
   }
   if (!genres.length) {
-    genres = [...new Set(all.flatMap((e) => e.lineup.filter((l) => normalizeName(l.artist.name) === normalizeName(name)).flatMap((l) => l.artist.genres)))];
+    genres = [...new Set(all.flatMap((e) => e.lineup.filter((l) => normalizeName(l.artist.name) === normalizeName(name)).flatMap((l) => [...(l.artist.tags ?? []), ...l.artist.genres])))];
     genreSource = "aus den Termindaten";
   }
 
@@ -128,7 +128,7 @@ export default async function ArtistPage({ params }: PageProps<"/artist/[name]">
             <ul className="flex flex-wrap gap-1.5">
               {genres.map((g) => (
                 <li key={g}>
-                  <Link href={`/suche?genre=${encodeURIComponent(g)}`} className="inline-flex min-h-11 items-center rounded-full border border-control px-4 text-sm font-medium hover:bg-fg/5">
+                  <Link href={`/?genre=${encodeURIComponent(g)}`} className="inline-flex min-h-11 items-center rounded-full border border-control px-4 text-sm font-medium hover:bg-fg/5">
                     {g}
                   </Link>
                 </li>

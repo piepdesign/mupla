@@ -121,7 +121,12 @@ export function applyView(slug: ViewSlug, cands: Candidate[], ctx: CurationConte
       };
     case "favorites":
       return {
-        items: strip(score(cands, { ...ctx, discoveryLevel: 1 }).filter((r) => ctx.favoriteEventIds?.has(r.event.id)).sort(byDate)),
+        items: strip(score(cands, { ...ctx, noDiscoveryFloor: true }).filter((r) => ctx.favoriteEventIds?.has(r.event.id)).sort(byDate)),
       };
   }
+}
+
+/** Search results: every candidate with a true reason, best match first. Filters are applied by the caller. */
+export function applySearch(cands: Candidate[], ctx: CurationContext): Recommendation[] {
+  return strip(score(cands, { ...ctx, noDiscoveryFloor: true }).sort(byScore));
 }

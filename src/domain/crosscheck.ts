@@ -42,13 +42,13 @@ export function crossCheck(rec: Recommendation, m: EventMatch): Check[] {
         break;
       }
       case "genre-match": {
-        const g = m.genres.find((x) => x.tag === r.tag && x.artist === r.artist);
+        const g = m.genres.find((x) => x.tag === r.tag && x.artist === r.artist && x.source === r.source);
         ok = Boolean(g);
-        detail = g ? `Genre-Gewicht ${g.weight.toFixed(2)}${g.broad ? " (Oberbegriff, halbiert)" : ""}${g.artist ? `, Tag von ${g.artist}` : ", Einordnung des Events"}` : "Genre nicht im Match";
+        detail = g ? `Genre-Gewicht ${g.weight.toFixed(2)}${g.broad ? " (Oberbegriff, halbiert)" : ""}${g.artist ? `, bei ${g.artist}` : ", Einordnung des Events"}, Quelle ${g.source}` : "Genre nicht im Match";
         break;
       }
       case "adjacent-genre": {
-        const g = m.adjacentGenres.find((x) => x.tag === r.tag && x.via === r.via);
+        const g = m.adjacentGenres.find((x) => x.tag === r.tag && x.via === r.via && x.artist === r.artist && x.source === r.source);
         ok = Boolean(g);
         detail = g ? `angrenzend über ${g.via}` : "nicht im Match";
         break;

@@ -17,11 +17,23 @@ import { defaultWindow, homeFromEnv, PROFILE_ARTISTS_FOR_EVENT_SEARCH, SWEEP_RAD
 const MAX_TAG_LOOKUPS = 300;
 const MIN_TAG_COUNT = 10; // Last.fm tag counts are relative (100 = strongest tag); below 10 is noise
 
+/** Short, plain titles may be an act ("Domstürmer"); titles with separators or many words are programme names. */
+export function looksLikeActName(title: string): boolean {
+  if (/[:|•–—]|\s-\s|\bfeat\.|\blive\b|\btour\b|\bkonzert|\bparty\b|\bfestival\b/i.test(title)) return false;
+  return title.trim().split(/\s+/).length <= 4;
+}
+
 async function enrichHeadlinerTags(events: MusicEvent[], idx: ReturnType<typeof buildProfileIndex>, warnings: string[]) {
   const todo = [...events]
     .filter((e) => e.kind !== "festival")
     .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))
-    .map((e) => e.lineup.find((l) => l.role === "headliner"))
+    .map((e) => {
+      const l = e.lineup.find((x) => x.role === "headliner");
+      // Venue calendars and Eventfrog use the event title as stand-in headliner. Long titles such as
+      // "Weihnachtssingen des Domchores" are no act names; Last.fm's autocorrect would still return some artist.
+      if (l && l.artist.name === e.title && !looksLikeActName(e.title)) return undefined;
+      return l;
+    })
     .filter((l): l is NonNullable<typeof l> => Boolean(l))
     .filter((l) => !idx.direct.has(normalizeName(l.artist.name)));
   const byName = new Map<string, string[]>();
@@ -41,7 +53,7 @@ async function enrichHeadlinerTags(events: MusicEvent[], idx: ReturnType<typeof 
       }
     }
     const tags = byName.get(k);
-    if (tags?.length) l.artist.genres = [...new Set([...tags, ...l.artist.genres])];
+    if (tags?.length) l.artist.tags = tags;
   }
   if (todo.length > lookups && lookups >= MAX_TAG_LOOKUPS) warnings.push(`Genre-Tags nur für die ${MAX_TAG_LOOKUPS} nächsten Headliner geladen, spätere Termine haben nur die grobe Ticketmaster-Einordnung.`);
 }
@@ -103,7 +115,7 @@ export async function getCurationData(): Promise<CurationData> {
     if (match) candidates.push({ event, match });
     else unrelated.push(event);
     for (const g of event.genres) genres.add(g);
-    for (const l of event.lineup) for (const g of l.artist.genres) genres.add(g);
+    for (const l of event.lineup) for (const g of [...l.artist.genres, ...(l.artist.tags ?? [])]) genres.add(g);
   }
 
   // Listener counts for headliners with an artist match (Popular view).

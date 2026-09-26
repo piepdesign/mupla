@@ -55,7 +55,7 @@ export function ProfileView({
       .map((r): EventRow | null => {
         const artist = r.event.lineup.find((l) => artists.has(normalizeName(l.artist.name)));
         if (artist) return { ...r, note: `Neu mit ${artist.artist.name}, einem deiner favorisierten Artists.` };
-        const genre = [...r.event.genres, ...r.event.lineup.flatMap((l) => l.artist.genres)].find((g) => genres.has(g));
+        const genre = [...r.event.genres, ...r.event.lineup.flatMap((l) => [...l.artist.genres, ...(l.artist.tags ?? [])])].find((g) => genres.has(g));
         if (genre) return { ...r, note: `Neu im favorisierten Genre ${genre}.` };
         return null;
       })

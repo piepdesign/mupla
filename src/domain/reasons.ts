@@ -1,10 +1,36 @@
-import type { Reason } from "./types";
+import type { GenreSource, Reason } from "./types";
 
 /** A reason rendered as text segments; `strong` segments are the data anchors. */
 /** `artist` marks segments that name an artist, so the UI can link them to the artist page. */
 export type ReasonSegment = { text: string; strong?: boolean; artist?: boolean };
 
 const nf = new Intl.NumberFormat("de-DE");
+
+/** Display name of a genre source. Provider ids come from SourceRef.provider. */
+export function genreSourceLabel(source: GenreSource): string {
+  if (source === "ticketmaster") return "Ticketmaster";
+  if (source === "eventfrog") return "Eventfrog";
+  if (source === "curated") return "Deine Liste";
+  if (source.startsWith("ics:")) return "Der Venue-Kalender";
+  return "Die Quelle";
+}
+
+/**
+ * First half of a genre reason, naming where the genre comes from, so it can be checked on the
+ * ticket page (provider) or on Last.fm (listener tags).
+ */
+function genreClaim(r: { tag: string; artist?: string; source: GenreSource }): ReasonSegment[] {
+  const tag: ReasonSegment = { text: r.tag, strong: true };
+  if (r.source === "lastfm") {
+    return r.artist
+      ? [{ text: "Auf Last.fm ist " }, { text: r.artist, strong: true, artist: true }, { text: " als " }, tag, { text: " getaggt" }]
+      : [{ text: "Auf Last.fm als " }, tag, { text: " getaggt" }];
+  }
+  const who = genreSourceLabel(r.source);
+  return r.artist
+    ? [{ text: `${who} führt ` }, { text: r.artist, strong: true, artist: true }, { text: " unter " }, tag]
+    : [{ text: `${who} führt diesen Termin unter ` }, tag];
+}
 
 /** Text patterns from "00 Konzept/(C) Ansichten & Filter.md". */
 export function renderReason(r: Reason): ReasonSegment[] {
@@ -26,23 +52,9 @@ export function renderReason(r: Reason): ReasonSegment[] {
         { text: "." },
       ];
     case "genre-match":
-      return r.artist
-        ? [
-            { text: "Weil " },
-            { text: r.artist, strong: true, artist: true },
-            { text: " unter " },
-            { text: r.tag, strong: true },
-            { text: " läuft, einem deiner meistgehörten Genres." },
-          ]
-        : [{ text: "Weil " }, { text: r.tag, strong: true }, { text: " zu deinen meistgehörten Genres gehört." }];
+      return [...genreClaim(r), { text: ", eines deiner meistgehörten Genres." }];
     case "adjacent-genre":
-      return [
-        { text: "" },
-        { text: r.tag, strong: true },
-        { text: " grenzt an dein Profil an (über " },
-        { text: r.via, strong: true },
-        { text: ")." },
-      ];
+      return [...genreClaim(r), { text: ". Das grenzt an dein Profil an (über " }, { text: r.via, strong: true }, { text: ")." }];
     case "dormant-artist":
       return [
         { text: "" },

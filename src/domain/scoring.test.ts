@@ -123,7 +123,7 @@ describe("scoreMatch and reasons", () => {
     const weak = ev({ acts: ["Unknown"], genres: ["ambient"] });
     expect(score(weak, { ...settings, discoveryLevel: 0 })).toBeNull();
     const r = score(weak, { ...settings, discoveryLevel: 0.6 })!;
-    expect(r.reasons[0]).toEqual({ type: "genre-match", tag: "ambient" });
+    expect(r.reasons[0]).toMatchObject({ type: "genre-match", tag: "ambient", artist: undefined });
   });
 
   it("genre reason names the act whose tags matched, so different events get different reasons", () => {
@@ -134,8 +134,21 @@ describe("scoreMatch and reasons", () => {
     };
     const r1 = score(withTags("Unknown A", ["ambient"]), { ...settings, discoveryLevel: 0.6 })!;
     const r2 = score(withTags("Unknown B", ["ambient"]), { ...settings, discoveryLevel: 0.6 })!;
-    expect(r1.reasons[0]).toEqual({ type: "genre-match", tag: "ambient", artist: "Unknown A" });
-    expect(r2.reasons[0]).toEqual({ type: "genre-match", tag: "ambient", artist: "Unknown B" });
+    expect(r1.reasons[0]).toMatchObject({ type: "genre-match", tag: "ambient", artist: "Unknown A" });
+    expect(r2.reasons[0]).toMatchObject({ type: "genre-match", tag: "ambient", artist: "Unknown B" });
+  });
+
+  it("names the genre source: provider classification before Last.fm tags", () => {
+    const e = ev({ acts: ["GoldFord"], genres: [] });
+    e.sources = [{ provider: "ticketmaster", externalId: "x", url: "https://example.org", fetchedAt: "2026-09-26T00:00:00Z" }];
+    e.lineup[0].artist.genres = ["ambient"];
+    e.lineup[0].artist.tags = ["ambient", "neoclassical"];
+    const m = matchEvent(e, idx)!;
+    expect(m.genres[0]).toMatchObject({ tag: "ambient", artist: "GoldFord", source: "ticketmaster" });
+    expect(m.adjacentGenres[0]).toMatchObject({ tag: "neoclassical", artist: "GoldFord", source: "lastfm" });
+    const onlyTags = ev({ acts: ["GoldFord"], genres: [] });
+    onlyTags.lineup[0].artist.tags = ["ambient"];
+    expect(matchEvent(onlyTags, idx)!.genres[0]).toMatchObject({ tag: "ambient", source: "lastfm" });
   });
 
   it("umbrella genres count half and give way to a specific tag", () => {
@@ -155,7 +168,7 @@ describe("scoreMatch and reasons", () => {
     const e = ev({ acts: ["Unknown"], genres: ["neoclassical"] });
     expect(score(e, { ...settings, discoveryLevel: 0 })).toBeNull();
     const r = score(e, { ...settings, discoveryLevel: 0.8 })!;
-    expect(r.reasons[0]).toEqual({ type: "adjacent-genre", tag: "neoclassical", via: "ambient" });
+    expect(r.reasons[0]).toMatchObject({ type: "adjacent-genre", tag: "neoclassical", via: "ambient" });
     expect(r.components.profileMatch).toBe(0);
   });
 

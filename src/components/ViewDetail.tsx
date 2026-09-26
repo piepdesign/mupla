@@ -4,51 +4,23 @@ import { useState } from "react";
 import Link from "next/link";
 import { pairFor } from "@/design/tokens";
 import { viewMeta, type ViewSlug } from "@/domain/views";
-import type { MusicEvent } from "@/domain/types";
-import { applyFilters } from "@/domain/filters";
-import { haversineKm } from "@/lib/geo";
 import type { CurationPageProps } from "./Dashboard";
 import { ArrowLeftIcon } from "./icons";
 import { SearchPanel } from "./SearchPanel";
 import { SectionHeader } from "./SectionHeader";
 import { Shelf } from "./Shelf";
 import { SpanSwitch } from "./SpanSwitch";
-import { UnrelatedList } from "./UnrelatedList";
 import { useCuration } from "./useCuration";
 
 const PAGE = 30;
 
-/** One view in full: same search panel as the dashboard, all matches as a grid. Also serves the search page. */
-export function ViewDetail({
-  view,
-  unrelated,
-  heading,
-  ...props
-}: CurationPageProps & {
-  view: ViewSlug;
-  /** Search page only: events without profile relation, listed separately and without ranking. */
-  unrelated?: MusicEvent[];
-  heading?: { label: string; question: string };
-}) {
+/** One view in full: same search panel as the dashboard, all matches as a grid. */
+export function ViewDetail({ view, ...props }: CurationPageProps & { view: ViewSlug }) {
   const c = useCuration(props);
   const [limit, setLimit] = useState(PAGE);
   const result = c.run(view);
-  const meta = heading ?? viewMeta(view, c.filters.span);
+  const meta = viewMeta(view, c.filters.span);
   const f = c.filters;
-
-  const unrelatedHits = (() => {
-    // Without a query the list would be the whole event pool; it is meant for finding, not browsing.
-    if (!unrelated || (!f.q && !f.genres.length)) return [];
-    // Candidates whose link to the profile is too weak for a card at this discovery level belong here too,
-    // otherwise a search would not find them at all.
-    const shown = new Set(result.items.map((r) => r.event.id));
-    const pool = [...unrelated, ...props.candidates.filter((x) => !shown.has(x.event.id)).map((x) => x.event)];
-    const withDistance = pool.map((event) => ({
-      event,
-      distanceKm: event.venue.lat !== undefined && event.venue.lon !== undefined ? haversineKm(c.home, { lat: event.venue.lat, lon: event.venue.lon }) : undefined,
-    }));
-    return applyFilters(withDistance, f).sort((a, b) => Date.parse(a.event.startsAt) - Date.parse(b.event.startsAt));
-  })();
 
   return (
     <>
@@ -57,7 +29,7 @@ export function ViewDetail({
         Übersicht
       </Link>
       <SectionHeader id="view-title" title={meta.label} question={meta.question} accent={pairFor(view)[0]} level={1}>
-        {view === "timeframe" && !heading ? <SpanSwitch value={f.span} onChange={(span) => c.updateFilters({ ...f, span })} /> : null}
+        {view === "timeframe" ? <SpanSwitch value={f.span} onChange={(span) => c.updateFilters({ ...f, span })} /> : null}
       </SectionHeader>
       <SearchPanel
         filters={f}
@@ -71,7 +43,7 @@ export function ViewDetail({
         onShowScoreChange={c.setShowScore}
         profileGenres={props.profileGenres}
         allGenres={props.allGenres}
-        resultCount={result.items.length + unrelatedHits.length}
+        resultCount={result.items.length}
       />
       <Shelf
         id={view}
@@ -98,7 +70,6 @@ export function ViewDetail({
           ) : null
         }
       />
-      {unrelated && <UnrelatedList items={unrelatedHits} active={Boolean(f.q || f.genres.length)} />}
     </>
   );
 }

@@ -8,7 +8,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { existsSync, mkdirSync } from "node:fs";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
-const PAGES = (process.env.A11Y_PAGES ?? "/,/ansicht/season,/suche,/profil,/quellen").split(",");
+const PAGES = (process.env.A11Y_PAGES ?? "/,/?q=nacht,/ansicht/season,/profil,/quellen").split(",");
 const candidates = [
   process.env.CHROME_PATH,
   "/opt/pw-browsers/chromium",

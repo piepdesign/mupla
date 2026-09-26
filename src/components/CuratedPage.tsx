@@ -8,7 +8,7 @@ import { ProviderNotice } from "./ProviderNotice";
 
 /** Server wrapper shared by all views: loads data once, hands candidates to the client curator. */
 /** `view` undefined renders the dashboard. */
-export async function CuratedPage({ view, search = false }: { view?: ViewSlug; search?: boolean }) {
+export async function CuratedPage({ view }: { view?: ViewSlug }) {
   const data = await getCurationData();
 
   if (!data.ok) {
@@ -42,14 +42,9 @@ export async function CuratedPage({ view, search = false }: { view?: ViewSlug; s
     <>
       <ProviderNotice providers={data.providers} />
       {view === undefined ? (
-        <Dashboard {...props} />
+        <Dashboard {...props} unrelated={data.unrelated} />
       ) : (
-        <ViewDetail
-          {...props}
-          view={view}
-          unrelated={search ? data.unrelated : undefined}
-          heading={search ? { label: "Search", question: "Was suchst du, auch jenseits deines Profils?" } : undefined}
-        />
+        <ViewDetail {...props} view={view} />
       )}
       <p className="text-xs text-fg-muted">
         {data.candidates.length} von {data.totalEvents} geladenen Terminen haben einen Bezug zum Hörprofil von {data.username}.

@@ -1,4 +1,4 @@
-import type { MusicEvent, Reason, Recommendation, ScoreComponents, TasteProfile } from "./types";
+import type { GenreSource, MusicEvent, Reason, Recommendation, ScoreComponents, TasteProfile } from "./types";
 import { BROAD_GENRES, normalizeGenre, normalizeName } from "./normalize";
 import { haversineKm, type LatLon } from "@/lib/geo";
 
@@ -80,9 +80,9 @@ export type EventMatch = {
   direct: { name: string; plays: number; weight: number; headliner: boolean }[];
   similar: { name: string; via: string; match: number; headliner: boolean }[];
   dormant: { name: string; period: string }[];
-  /** `artist` names the act whose tags matched; undefined when only the event's own classification matched. */
-  genres: { tag: string; weight: number; artist?: string; broad: boolean }[];
-  adjacentGenres: { tag: string; via: string }[];
+  /** `artist` names the act whose genre matched; undefined when only the event's own classification matched. */
+  genres: { tag: string; weight: number; artist?: string; broad: boolean; source: GenreSource }[];
+  adjacentGenres: { tag: string; via: string; artist?: string; source: GenreSource }[];
 };
 
 export function matchEvent(e: MusicEvent, idx: ProfileIndex): EventMatch | null {
@@ -100,10 +100,14 @@ export function matchEvent(e: MusicEvent, idx: ProfileIndex): EventMatch | null 
     const z = idx.dormant.get(k);
     if (z) m.dormant.push(z);
   }
-  // Artist-level tags first (headliner before support), then the event's own classification.
-  const sources: { tags: string[]; artist?: string }[] = [
-    ...[...acts].sort((a, b) => Number(b.role === "headliner") - Number(a.role === "headliner")).map((l) => ({ tags: l.artist.genres, artist: l.artist.name })),
-    { tags: e.genres },
+  // The provider's own classification comes first, so a reason names the genre the ticket page shows;
+  // Last.fm listener tags only add what the provider does not say. Headliner before support.
+  const provider: GenreSource = e.sources[0]?.provider ?? "unknown";
+  const ordered = [...acts].sort((a, b) => Number(b.role === "headliner") - Number(a.role === "headliner"));
+  const sources: { tags: string[]; artist?: string; source: GenreSource }[] = [
+    ...ordered.map((l) => ({ tags: l.artist.genres, artist: l.artist.name, source: provider })),
+    { tags: e.genres, source: provider },
+    ...ordered.map((l) => ({ tags: l.artist.tags ?? [], artist: l.artist.name, source: "lastfm" as GenreSource })),
   ];
   const seen = new Set<string>();
   for (const src of sources) {
@@ -112,10 +116,10 @@ export function matchEvent(e: MusicEvent, idx: ProfileIndex): EventMatch | null 
       seen.add(g);
       const w = idx.tags.get(g);
       const broad = BROAD_GENRES.has(g);
-      if (w !== undefined) m.genres.push({ tag: g, weight: broad ? w * PROFILE.broadGenreFactor : w, artist: src.artist, broad });
+      if (w !== undefined) m.genres.push({ tag: g, weight: broad ? w * PROFILE.broadGenreFactor : w, artist: src.artist, broad, source: src.source });
       else if (!broad) {
         const via = idx.adjacentTags.get(g);
-        if (via) m.adjacentGenres.push({ tag: g, via });
+        if (via) m.adjacentGenres.push({ tag: g, via, artist: src.artist, source: src.source });
       }
     }
   }
@@ -202,16 +206,30 @@ export function deriveReasons(e: MusicEvent, m: EventMatch, pm: ReturnType<typeo
     const s = [...m.similar].sort((a, b) => b.match - a.match)[0];
     reasons.push({ type: "similar-artist", artist: s.name, via: s.via });
   }
-  if (pm.source === "genre" && m.genres[0]) reasons.push({ type: "genre-match", tag: m.genres[0].tag, artist: m.genres[0].artist });
+  if (pm.source === "genre" && m.genres[0]) {
+    const g = m.genres[0];
+    reasons.push({ type: "genre-match", tag: g.tag, artist: g.artist, source: g.source });
+  }
   if (disc > 0 && m.adjacentGenres[0] && !directs.length) {
-    reasons.push({ type: "adjacent-genre", tag: m.adjacentGenres[0].tag, via: m.adjacentGenres[0].via });
+    const a = m.adjacentGenres[0];
+    reasons.push({ type: "adjacent-genre", tag: a.tag, via: a.via, artist: a.artist, source: a.source });
   }
   return reasons;
 }
 
 // ---------------------------------------------------------------- score
 
-export type ScoreSettings = { home: LatLon; discoveryLevel: number; priceMaxEur?: number; now: Date };
+export type ScoreSettings = {
+  home: LatLon;
+  discoveryLevel: number;
+  priceMaxEur?: number;
+  now: Date;
+  /**
+   * Search and favourites: every event with a true reason gets a card, even when its profile match is
+   * below the discovery floor. The floor only thins out browsing views.
+   */
+  noDiscoveryFloor?: boolean;
+};
 
 export function distanceKm(e: MusicEvent, home: LatLon): number | undefined {
   return e.venue.lat !== undefined && e.venue.lon !== undefined ? haversineKm(home, { lat: e.venue.lat, lon: e.venue.lon }) : undefined;
@@ -241,7 +259,7 @@ export function scoreMatch(e: MusicEvent, m: EventMatch, s: ScoreSettings): Reco
     priceFriction: priceFriction(e.price, s.priceMaxEur),
   };
   const minProfile = MIN_PROFILE_AT_ZERO_DISCOVERY * (1 - clamp(s.discoveryLevel));
-  if (pm.value < minProfile && disc === 0) return null;
+  if (!s.noDiscoveryFloor && pm.value < minProfile && disc === 0) return null;
 
   const reasons = deriveReasons(e, m, pm, disc);
   if (reasons.length === 0) return null; // no anchor, no card
