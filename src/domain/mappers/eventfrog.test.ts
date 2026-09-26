@@ -70,15 +70,25 @@ describe("rubrics", () => {
     expect(musicRubricIds(rubrics).sort()).toEqual([1, 11, 13, 2, 21, 23, 3].sort());
   });
   it("splits rubric titles into genres and drops generic words", () => {
-    expect(genresFromRubrics(["Rock / Pop", "Konzerte"])).toEqual(["rock", "pop"]);
-    expect(genresFromRubrics(["Techno & House", "Party"])).toEqual(["techno", "house"]);
-    expect(genresFromRubrics(["Festivals"])).toEqual([]);
-    expect(genresFromRubrics(["Sonstige Partys", "Party"])).toEqual([]);
-    expect(genresFromRubrics(["Weitere Musikrichtungen", "Konzerte"])).toEqual([]);
-    expect(genresFromRubrics(["Jazz / Blues", "Konzerte"])).toEqual(["jazz", "blues"]);
-    expect(genresFromRubrics(["Singer / Songwriter", "Konzerte"])).toEqual(["singer-songwriter"]);
-    expect(genresFromRubrics(["Studentenparty", "Party"])).toEqual([]);
-    expect(genresFromRubrics(["Halloween", "Party"])).toEqual([]);
+    const g = (path: string[], title?: string) => genresFromRubrics(path, title).genres;
+    expect(g(["Festivals"])).toEqual([]);
+    expect(g(["Sonstige Partys", "Party"])).toEqual([]);
+    expect(g(["Weitere Musikrichtungen", "Konzerte"])).toEqual([]);
+    expect(g(["Singer / Songwriter", "Konzerte"])).toEqual(["singer-songwriter"]);
+    expect(g(["Studentenparty", "Party"])).toEqual([]);
+    expect(g(["Halloween", "Party"])).toEqual([]);
+    expect(g(["Techno", "Party"])).toEqual(["techno"]);
+    expect(g(["R&B", "Party"])).toEqual(["rnb"]);
+  });
+
+  it("treats a rubric spanning several genres as a category, narrowed only by the title", () => {
+    // Seen live 2026-09-26: a techno night in "House / Techno" was matched on house.
+    expect(genresFromRubrics(["House / Techno Partys", "Partys"], "90er Techno & Rave Classics")).toEqual({ genres: ["techno"], category: "House / Techno" });
+    expect(genresFromRubrics(["Rock / Pop", "Konzerte"], "GoldFord - Space of The Heart Tour")).toEqual({ genres: [], category: "Rock / Pop" });
+    expect(genresFromRubrics(["Jazz / Blues", "Konzerte"])).toEqual({ genres: [], category: "Jazz / Blues" });
+    expect(genresFromRubrics(["Techno & House", "Party"], "Deep House Sunday").genres).toEqual(["house"]);
+    // Word boundaries: "Poppy" does not name pop.
+    expect(genresFromRubrics(["Rock / Pop", "Konzerte"], "Poppy Live").genres).toEqual([]);
   });
 });
 
@@ -92,8 +102,9 @@ describe("mapEventfrogEvent", () => {
     expect(e.venue).toMatchObject({ id: "ef:900", name: "Kulturhalle", city: "Gießen", country: "DE", lat: 50.58, lon: 8.67 });
     expect(e.price).toEqual({ min: 25.5, currency: "EUR" });
     expect(e.lineup).toHaveLength(1);
-    expect(e.lineup[0]).toMatchObject({ role: "headliner", artist: { name: "Morgengrau", genres: ["rock", "pop"] } });
-    expect(e.genres).toEqual(["rock", "pop"]);
+    expect(e.lineup[0]).toMatchObject({ role: "headliner", artist: { name: "Morgengrau", genres: [], category: "Rock / Pop" } });
+    expect(e.genres).toEqual([]);
+    expect(e.category).toBe("Rock / Pop");
     expect(e.status).toBe("onsale");
     expect(e.officialTicketUrl).toBe("https://tickets.eventfrog.ch/1");
     expect(e.imageUrl).toBeUndefined();
@@ -114,7 +125,9 @@ describe("mapEventfrogEvent", () => {
     const party = map({ rubricId: 21, title: { de: "Nachtschicht" } })!;
     expect(party.kind).toBe("club-night");
     expect(party.lineup).toEqual([]);
-    expect(party.genres).toEqual(["techno", "house"]);
+    expect(party.genres).toEqual([]);
+    expect(party.category).toBe("Techno / House");
+    expect(map({ rubricId: 21, title: { de: "Techno im Keller" } })!.genres).toEqual(["techno"]);
   });
 
   it("counts multi-day events in calendar days", () => {

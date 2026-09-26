@@ -16,8 +16,10 @@ export type Artist = {
   id: string;
   name: string;
   mbid?: string;
-  /** Provider classification (Ticketmaster, Eventfrog, …). */
+  /** Genres the provider states unambiguously (see classifyCategory). */
   genres: string[];
+  /** Provider category spanning several genres ("Rock / Pop"). Searchable, never a reason on its own. */
+  category?: string;
   /** Last.fm listener tags, kept apart so a reason can name where a genre comes from. */
   tags?: string[];
   listeners?: number;
@@ -68,6 +70,10 @@ export type MusicEvent = {
   venue: Venue;
   lineup: LineupEntry[];
   genres: string[];
+  /** Provider category spanning several genres ("House / Techno"); `genres` then holds only what the title names. */
+  category?: string;
+  /** Provider behind `genres` when it differs from sources[0] (after merging two records). */
+  genreSource?: Provider;
   price?: PriceRange;
   size: EventSize;
   sizeEstimated?: boolean;
@@ -109,8 +115,8 @@ export type Reason =
   | { type: "direct-artist"; artist: string; plays: number }
   | { type: "similar-artist"; artist: string; via: string }
   | { type: "lineup-match"; count: number; examples: string[] }
-  | { type: "genre-match"; tag: string; artist?: string; source: GenreSource }
-  | { type: "adjacent-genre"; tag: string; via: string; artist?: string; source: GenreSource }
+  | { type: "genre-match"; tag: string; artist?: string; source: GenreSource; category?: string }
+  | { type: "adjacent-genre"; tag: string; via: string; artist?: string; source: GenreSource; category?: string }
   | { type: "dormant-artist"; artist: string; period: string };
 
 export type Recommendation = {

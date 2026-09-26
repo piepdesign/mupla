@@ -19,7 +19,7 @@ export function genreSourceLabel(source: GenreSource): string {
  * First half of a genre reason, naming where the genre comes from, so it can be checked on the
  * ticket page (provider) or on Last.fm (listener tags).
  */
-function genreClaim(r: { tag: string; artist?: string; source: GenreSource }): ReasonSegment[] {
+function genreClaim(r: { tag: string; artist?: string; source: GenreSource; category?: string }): ReasonSegment[] {
   const tag: ReasonSegment = { text: r.tag, strong: true };
   if (r.source === "lastfm") {
     return r.artist
@@ -27,6 +27,10 @@ function genreClaim(r: { tag: string; artist?: string; source: GenreSource }): R
       : [{ text: "Auf Last.fm als " }, tag, { text: " getaggt" }];
   }
   const who = genreSourceLabel(r.source);
+  // A category spanning several genres only counts through the title, so the reason says both.
+  if (r.category) {
+    return [{ text: `${who} führt diesen Termin unter „${r.category}“, der Titel nennt ` }, tag];
+  }
   return r.artist
     ? [{ text: `${who} führt ` }, { text: r.artist, strong: true, artist: true }, { text: " unter " }, tag]
     : [{ text: `${who} führt diesen Termin unter ` }, tag];

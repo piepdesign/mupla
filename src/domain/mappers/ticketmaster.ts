@@ -5,7 +5,7 @@ import {
   mapTicketmasterStatus,
   normalizeCountry,
   normalizeCurrency,
-  normalizeGenres,
+  classifyCategory,
   zonedToUtcIso,
 } from "../normalize";
 import { isValidLatLon } from "@/lib/geo";
@@ -62,8 +62,10 @@ function bestImage(raw: unknown): string | undefined {
   return pick ? s(pick.url) : undefined;
 }
 
-function classificationNames(raw: unknown): (string | undefined)[] {
-  return arr(raw).flatMap((c) => [s(o(c.genre).name), s(o(c.subGenre).name)]);
+/** Genre and sub-genre of the first classification; a pair like Rock + Pop is a category, see classifyCategory. */
+function classification(raw: unknown, title?: string): { genres: string[]; category?: string } {
+  const c = arr(raw)[0];
+  return c ? classifyCategory([s(o(c.genre).name), s(o(c.subGenre).name)], title) : { genres: [] };
 }
 
 const FESTIVAL_RE = /\bfestival|fest\b|open air|openair/i;
@@ -97,7 +99,7 @@ export function mapTicketmasterEvent(raw: Obj, fetchedAt: string, now = new Date
     const artist: Artist = {
       id: `tm:${s(a.id) ?? i}`,
       name: s(a.name) ?? "",
-      genres: normalizeGenres(classificationNames(a.classifications)),
+      ...classification(a.classifications),
       imageUrl: bestImage(a.images),
       sources: source("attraction", s(a.id) ?? "", s(a.url), fetchedAt),
     };
@@ -124,7 +126,7 @@ export function mapTicketmasterEvent(raw: Obj, fetchedAt: string, now = new Date
     durationDays,
     venue,
     lineup,
-    genres: normalizeGenres(classificationNames(raw.classifications)),
+    ...classification(raw.classifications, title),
     price: mapPrice(raw.priceRanges),
     size,
     sizeEstimated: estimated,

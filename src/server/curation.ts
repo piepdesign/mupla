@@ -1,6 +1,7 @@
 import "server-only";
 import { buildProfileIndex, matchEvent } from "@/domain/scoring";
 import type { Candidate } from "@/domain/curation";
+import { eventGenreWords } from "@/domain/filters";
 import type { MusicEvent, TasteProfile } from "@/domain/types";
 import { getEvents, type EventsResult } from "./events";
 import { getTasteProfile, type ProfileDiagnostics } from "./profile";
@@ -114,8 +115,7 @@ export async function getCurationData(): Promise<CurationData> {
     const match = matchEvent(event, idx);
     if (match) candidates.push({ event, match });
     else unrelated.push(event);
-    for (const g of event.genres) genres.add(g);
-    for (const l of event.lineup) for (const g of [...l.artist.genres, ...(l.artist.tags ?? [])]) genres.add(g);
+    for (const g of eventGenreWords(event)) genres.add(g);
   }
 
   // Listener counts for headliners with an artist match (Popular view).

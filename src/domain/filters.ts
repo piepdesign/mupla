@@ -1,4 +1,5 @@
-import type { EventSize, Recommendation } from "./types";
+import type { EventSize, MusicEvent, Recommendation } from "./types";
+import { categoryGenres } from "./normalize";
 import { SPANS, type Span } from "./views";
 
 /**
@@ -118,13 +119,25 @@ function localDateAndWeekday(iso: string): { date: string; weekday: number } {
   return { date: `${get("year")}-${get("month")}-${get("day")}`, weekday: WD[get("weekday")] ?? -1 };
 }
 
+/**
+ * Every genre word attached to an event, including both halves of an umbrella category.
+ * Right for finding ("show me house"), wrong for reasons, which use scoring's stricter view.
+ */
+export function eventGenreWords(e: MusicEvent): string[] {
+  return [
+    ...e.genres,
+    ...categoryGenres(e.category),
+    ...e.lineup.flatMap((l) => [...l.artist.genres, ...categoryGenres(l.artist.category), ...(l.artist.tags ?? [])]),
+  ];
+}
+
 /** Text match over artist names, title, venue, city and genres. Accent- and case-insensitive. */
 export function matchesQuery(r: Pick<Recommendation, "event">, q: string): boolean {
   if (!q) return true;
   const norm = (s: string) => s.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
   const needle = norm(q);
   const e = r.event;
-  const hay = [e.title, e.venue.name, e.venue.city, ...e.genres, ...e.lineup.map((l) => l.artist.name), ...e.lineup.flatMap((l) => [...l.artist.genres, ...(l.artist.tags ?? [])])];
+  const hay = [e.title, e.venue.name, e.venue.city, ...eventGenreWords(e), ...e.lineup.map((l) => l.artist.name)];
   return hay.some((h) => norm(h).includes(needle));
 }
 
@@ -143,7 +156,7 @@ export function applyFilters<T extends Pick<Recommendation, "event" | "distanceK
     if (f.to && date > f.to) return false;
     if (f.weekdays.length && !f.weekdays.includes(weekday)) return false;
     if (f.genres.length) {
-      const g = new Set([...e.genres, ...e.lineup.flatMap((l) => [...l.artist.genres, ...(l.artist.tags ?? [])])]);
+      const g = new Set(eventGenreWords(e));
       if (!f.genres.some((x) => g.has(x))) return false;
     }
     return matchesQuery(r, f.q);

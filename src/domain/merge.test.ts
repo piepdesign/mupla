@@ -341,7 +341,7 @@ describe("mergePair", () => {
     expect(result.lineup.some((l) => l.artist.name === "Another Band")).toBe(true);
   });
 
-  it("genres union without duplicates", () => {
+  it("keeps genres with the record that states them", () => {
     const event1 = createEvent({
       genres: ["electronic", "dance"],
       sources: [createSourceRef("ticketmaster")],
@@ -351,10 +351,8 @@ describe("mergePair", () => {
       sources: [createSourceRef("curated")],
     });
     const result = mergePair(event1, event2);
-    expect(result.genres).toContain("electronic");
-    expect(result.genres).toContain("dance");
-    expect(result.genres).toContain("ambient");
-    expect(result.genres.length).toBe(3);
+    // Mixing both lists would attribute curated genres to Ticketmaster in a reason.
+    expect(result.genres).toEqual(result.sources[0].provider === "ticketmaster" ? ["electronic", "dance"] : ["electronic", "ambient"]);
   });
 });
 

@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
+  classifyCategory,
+  titleNames,
   normalizeName,
   nameSimilarity,
   normalizeCity,
@@ -408,5 +410,24 @@ describe("estimateSize", () => {
     const result = estimateSize({ isFestival: false, capacity: 300, venueName: "Festhalle Frankfurt" });
     expect(result.size).toBe("club");
     expect(result.estimated).toBe(false);
+  });
+});
+
+describe("classifyCategory", () => {
+  it("resolves one genre, a refinement, or narrows an umbrella by the title", () => {
+    expect(classifyCategory(["Pop", "Undefined"])).toEqual({ genres: ["pop"] });
+    expect(classifyCategory(["Pop", "Pop"])).toEqual({ genres: ["pop"] });
+    expect(classifyCategory(["Rock", "Hard Rock"])).toEqual({ genres: ["hard rock"] });
+    expect(classifyCategory(["Hip-Hop/Rap", "Undefined"])).toEqual({ genres: ["hip-hop"] });
+    expect(classifyCategory(["Rock", "Pop"], "GoldFord - Space of The Heart Tour")).toEqual({ genres: [], category: "Rock / Pop" });
+    expect(classifyCategory(["Rock", "Funk"], "Funk Night")).toEqual({ genres: ["funk"], category: "Rock / Funk" });
+  });
+
+  it("finds genre names in titles as whole words, with aliases", () => {
+    expect(titleNames("90er Techno & Rave Classics", "techno")).toBe(true);
+    expect(titleNames("Hip Hop Jam", "hip-hop")).toBe(true);
+    expect(titleNames("R&B Friday", "rnb")).toBe(true);
+    expect(titleNames("Poppy Live", "pop")).toBe(false);
+    expect(titleNames("Housewarming", "house")).toBe(false);
   });
 });

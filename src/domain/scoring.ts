@@ -81,8 +81,8 @@ export type EventMatch = {
   similar: { name: string; via: string; match: number; headliner: boolean }[];
   dormant: { name: string; period: string }[];
   /** `artist` names the act whose genre matched; undefined when only the event's own classification matched. */
-  genres: { tag: string; weight: number; artist?: string; broad: boolean; source: GenreSource }[];
-  adjacentGenres: { tag: string; via: string; artist?: string; source: GenreSource }[];
+  genres: { tag: string; weight: number; artist?: string; broad: boolean; source: GenreSource; category?: string }[];
+  adjacentGenres: { tag: string; via: string; artist?: string; source: GenreSource; category?: string }[];
 };
 
 export function matchEvent(e: MusicEvent, idx: ProfileIndex): EventMatch | null {
@@ -102,11 +102,12 @@ export function matchEvent(e: MusicEvent, idx: ProfileIndex): EventMatch | null 
   }
   // The provider's own classification comes first, so a reason names the genre the ticket page shows;
   // Last.fm listener tags only add what the provider does not say. Headliner before support.
-  const provider: GenreSource = e.sources[0]?.provider ?? "unknown";
+  // Umbrella categories ("Rock / Pop") never arrive here as genres, see classifyCategory.
+  const provider: GenreSource = e.genreSource ?? e.sources[0]?.provider ?? "unknown";
   const ordered = [...acts].sort((a, b) => Number(b.role === "headliner") - Number(a.role === "headliner"));
-  const sources: { tags: string[]; artist?: string; source: GenreSource }[] = [
-    ...ordered.map((l) => ({ tags: l.artist.genres, artist: l.artist.name, source: provider })),
-    { tags: e.genres, source: provider },
+  const sources: { tags: string[]; artist?: string; source: GenreSource; category?: string }[] = [
+    ...ordered.map((l) => ({ tags: l.artist.genres, artist: l.artist.name, source: l.artist.sources[0]?.provider ?? provider, category: l.artist.category })),
+    { tags: e.genres, source: provider, category: e.category },
     ...ordered.map((l) => ({ tags: l.artist.tags ?? [], artist: l.artist.name, source: "lastfm" as GenreSource })),
   ];
   const seen = new Set<string>();
@@ -116,10 +117,10 @@ export function matchEvent(e: MusicEvent, idx: ProfileIndex): EventMatch | null 
       seen.add(g);
       const w = idx.tags.get(g);
       const broad = BROAD_GENRES.has(g);
-      if (w !== undefined) m.genres.push({ tag: g, weight: broad ? w * PROFILE.broadGenreFactor : w, artist: src.artist, broad, source: src.source });
+      if (w !== undefined) m.genres.push({ tag: g, weight: broad ? w * PROFILE.broadGenreFactor : w, artist: src.artist, broad, source: src.source, category: src.category });
       else if (!broad) {
         const via = idx.adjacentTags.get(g);
-        if (via) m.adjacentGenres.push({ tag: g, via, artist: src.artist, source: src.source });
+        if (via) m.adjacentGenres.push({ tag: g, via, artist: src.artist, source: src.source, category: src.category });
       }
     }
   }
@@ -208,11 +209,11 @@ export function deriveReasons(e: MusicEvent, m: EventMatch, pm: ReturnType<typeo
   }
   if (pm.source === "genre" && m.genres[0]) {
     const g = m.genres[0];
-    reasons.push({ type: "genre-match", tag: g.tag, artist: g.artist, source: g.source });
+    reasons.push({ type: "genre-match", tag: g.tag, artist: g.artist, source: g.source, ...(g.category ? { category: g.category } : {}) });
   }
   if (disc > 0 && m.adjacentGenres[0] && !directs.length) {
     const a = m.adjacentGenres[0];
-    reasons.push({ type: "adjacent-genre", tag: a.tag, via: a.via, artist: a.artist, source: a.source });
+    reasons.push({ type: "adjacent-genre", tag: a.tag, via: a.via, artist: a.artist, source: a.source, ...(a.category ? { category: a.category } : {}) });
   }
   return reasons;
 }

@@ -78,7 +78,10 @@ export function mergePair(a: MusicEvent, b: MusicEvent): MusicEvent {
     },
     // Keep the winner's line-up, add acts only the other source knows (e.g. curated day/stage data).
     lineup: [...win.lineup, ...lose.lineup.filter((l) => !lineupNames.has(l.artist.name.toLowerCase()))],
-    genres: [...new Set([...win.genres, ...lose.genres])],
+    // Genres stay with the record that states them, so a reason names the right provider.
+    genres: win.genres.length ? win.genres : lose.genres,
+    category: win.genres.length ? win.category : (lose.category ?? win.category),
+    genreSource: win.genres.length ? win.genreSource : (lose.genreSource ?? lose.sources[0]?.provider),
     sources: [...win.sources, ...lose.sources],
   };
 }

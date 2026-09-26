@@ -1,5 +1,5 @@
 import type { EventKind, EventStatus, MusicEvent, PriceRange, SourceRef, Venue } from "../types";
-import { estimateSize, normalizeCountry, normalizeGenres } from "../normalize";
+import { classifyCategory, estimateSize, normalizeCountry, splitCategory } from "../normalize";
 import { isValidLatLon } from "@/lib/geo";
 import { localImageUrl } from "@/lib/images";
 
@@ -88,14 +88,19 @@ const GENERIC = /^(musik|music|musique|konzerte?|concerts?|festivals?|partys?|pa
 const OCCASION = /party$|partys$|halloween|motto|fasching|karneval|fastnacht|silvester|oktoberfest|ü\s?\d\d/i;
 
 /**
- * Genre tags from the most specific rubric title only: "Rock / Pop" -> ["rock", "pop"].
- * Parent titles ("Konzerte", "Partys") are categories, not genres.
+ * Genres from the most specific rubric title only; parent titles ("Konzerte", "Partys") are categories.
+ * A leaf that spans several genres ("House / Techno") is a catalogue shelf, not a statement about the
+ * night: then only the genres the event title names count (see classifyCategory), and the leaf is
+ * kept as `category`.
  */
-export function genresFromRubrics(path: string[]): string[] {
+export function genresFromRubrics(path: string[], title?: string): { genres: string[]; category?: string } {
   const leaf = path[0]?.replace(/singer\s*\/\s*songwriter/i, "singer-songwriter");
-  if (!leaf) return [];
-  const parts = leaf.split(/\s*[/&,+]\s*|\s+und\s+|\s+and\s+/i).map((p) => p.trim());
-  return normalizeGenres(parts.filter((p) => p && !GENERIC.test(p) && !OCCASION.test(p)));
+  if (!leaf) return { genres: [] };
+  // "Techno Partys" -> "Techno"; a bare occasion ("Studentenparty", "Halloween") stays an occasion.
+  const parts = splitCategory(leaf)
+    .map((p) => p.replace(/\s+(party|partys|parties)$/i, ""))
+    .filter((p) => p && !GENERIC.test(p) && !OCCASION.test(p));
+  return classifyCategory(parts, title);
 }
 
 /**
@@ -172,7 +177,7 @@ export function mapEventfrogEvent(
 
   const path = rubricPath(n(raw.rubricId) ?? -1, rubrics);
   const kind = kindFor(title, path);
-  const genres = genresFromRubrics(path);
+  const { genres, category } = genresFromRubrics(path, title);
 
   const endIso = s(raw.end);
   const endsAt = endIso && Number.isFinite(Date.parse(endIso)) && Date.parse(endIso) > Date.parse(begin) ? new Date(endIso).toISOString() : undefined;
@@ -202,9 +207,10 @@ export function mapEventfrogEvent(
     // (same rule as venue calendars); festivals and parties get none, so no artist reason is invented.
     lineup:
       kind === "concert"
-        ? [{ artist: { id: `ef:${id}:headliner`, name: title, genres, sources: src("event", id, url) }, role: "headliner" }]
+        ? [{ artist: { id: `ef:${id}:headliner`, name: title, genres, category, sources: src("event", id, url) }, role: "headliner" }]
         : [],
     genres,
+    category,
     price,
     size,
     sizeEstimated: estimated,

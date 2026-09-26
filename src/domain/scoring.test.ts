@@ -1,3 +1,4 @@
+import { reasonToString } from "./reasons";
 import { describe, expect, it } from "vitest";
 import type { MusicEvent, TasteProfile } from "./types";
 import {
@@ -149,6 +150,18 @@ describe("scoreMatch and reasons", () => {
     const onlyTags = ev({ acts: ["GoldFord"], genres: [] });
     onlyTags.lineup[0].artist.tags = ["ambient"];
     expect(matchEvent(onlyTags, idx)!.genres[0]).toMatchObject({ tag: "ambient", source: "lastfm" });
+  });
+
+  it("quotes the category when only the title narrowed it to a genre", () => {
+    const e = ev({ acts: [], genres: ["ambient"] });
+    e.lineup = [];
+    e.category = "Ambient / Drone";
+    e.sources = [{ provider: "eventfrog", externalId: "x", url: "https://example.org", fetchedAt: "2026-09-26T00:00:00Z" }];
+    const m = matchEvent(e, idx)!;
+    expect(m.genres[0]).toMatchObject({ tag: "ambient", source: "eventfrog", category: "Ambient / Drone" });
+    expect(reasonToString({ type: "genre-match", tag: "ambient", source: "eventfrog", category: "Ambient / Drone" })).toBe(
+      "Eventfrog führt diesen Termin unter „Ambient / Drone“, der Titel nennt ambient, eines deiner meistgehörten Genres.",
+    );
   });
 
   it("umbrella genres count half and give way to a specific tag", () => {

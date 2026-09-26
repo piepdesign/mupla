@@ -126,6 +126,43 @@ export function normalizeGenres(raw: (string | undefined)[]): string[] {
   return out;
 }
 
+/**
+ * A provider category such as "Rock/Pop" or "House / Techno" is a shelf in its catalogue, not a
+ * statement about what is played: a techno night filed under House/Techno says nothing about house.
+ * So a category resolves to a genre only when it names exactly one, or when one name refines the
+ * other ("Rock" + "Hard Rock" -> "hard rock"). Otherwise only the parts the event title names
+ * itself count, and the category is kept as `category` so a reason can quote it.
+ */
+export function classifyCategory(parts: (string | undefined)[], title?: string): { genres: string[]; category?: string } {
+  const labels = parts.map((p) => p?.trim()).filter((p): p is string => !!p && normalizeGenre(p) !== undefined);
+  const genres = normalizeGenres(labels);
+  if (genres.length <= 1) return { genres };
+  const refined = genres.filter((g) => !genres.some((o) => o !== g && o.includes(g)));
+  if (refined.length === 1) return { genres: refined };
+  const category = [...new Set(labels)].join(" / ");
+  return { genres: title ? genres.filter((g) => titleNames(title, g)) : [], category };
+}
+
+/** Whether a title names a genre as a word: "90er Techno & Rave" names techno, "Poppy" does not name pop. */
+export function titleNames(title: string, genre: string): boolean {
+  const variants = [genre, ...Object.entries(GENRE_ALIASES).filter(([, v]) => v === genre).map(([k]) => k)];
+  const t = title.toLowerCase();
+  return variants.some((v) => {
+    const re = v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/[- ]/g, "[- ]?");
+    return new RegExp(`(^|[^\\p{L}\\p{N}])${re}($|[^\\p{L}\\p{N}])`, "u").test(t);
+  });
+}
+
+/** "Rock / Pop", "Techno & House", "Jazz und Blues" -> parts. "R&B" stays whole: "&" splits only with spaces. */
+export function splitCategory(label: string): string[] {
+  return label.split(/\s*[/,]\s*|\s+[&+]\s+|\s+und\s+|\s+and\s+/i).map((p) => p.trim()).filter(Boolean);
+}
+
+/** Genre words inside a category label, for filtering and search (not for reasons). */
+export function categoryGenres(category: string | undefined): string[] {
+  return category ? normalizeGenres(splitCategory(category)) : [];
+}
+
 // ---------- time ----------
 
 /** Offset in minutes of `timeZone` at the given UTC instant. */
