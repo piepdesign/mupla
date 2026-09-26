@@ -6,11 +6,12 @@ const dayFmt = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digi
 const timeFmt = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: TZ });
 const shortFmt = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", timeZone: TZ });
 
-export function formatEventDate(e: Pick<MusicEvent, "startsAt" | "endsAt" | "durationDays">): string {
+export function formatEventDate(e: Pick<MusicEvent, "startsAt" | "endsAt" | "durationDays" | "startTimeKnown">): string {
   const start = new Date(e.startsAt);
   if (e.endsAt && (e.durationDays ?? 1) > 1) {
     return `${shortFmt.format(start)} bis ${dayFmt.format(new Date(e.endsAt))}`;
   }
+  if (e.startTimeKnown === false) return `${dayFmt.format(start)}, Uhrzeit offen`;
   return `${dayFmt.format(start)}, ${timeFmt.format(start)} Uhr`;
 }
 
@@ -39,6 +40,7 @@ export const statusLabel: Record<MusicEvent["status"], string | null> = {
   soldout: "Ausverkauft",
   cancelled: "Abgesagt",
   postponed: "Verschoben",
+  rescheduled: "Neuer Termin",
   offsale: "Kein Verkauf",
   unknown: null,
 };

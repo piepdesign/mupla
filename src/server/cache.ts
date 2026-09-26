@@ -8,7 +8,7 @@ import { join } from "node:path";
  * Survives dev-server restarts, so reloading the app does not hit the APIs again.
  */
 
-const DIR = join(process.cwd(), ".cache");
+const DIR = join(process.cwd(), process.env.MUPLA_CACHE_DIR ?? ".cache");
 const memory = new Map<string, { expires: number; value: unknown }>();
 const inflight = new Map<string, Promise<unknown>>();
 

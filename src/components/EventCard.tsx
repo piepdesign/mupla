@@ -4,12 +4,24 @@ import { renderReason } from "@/domain/reasons";
 import { formatDistance, formatDuration, formatEventDate, formatPrice, sizeLabel, statusLabel } from "@/lib/format";
 import { FavoriteToggle } from "./FavoriteToggle";
 import { GeneratedArt } from "./GeneratedArt";
+import { ScoreBreakdown } from "./ScoreBreakdown";
 
 /**
  * Field order is fixed by the design direction:
  * date, name, place + distance, duration, price, up to three genres, reason, favourite, ticket link.
  */
-export function EventCard({ rec, pair }: { rec: Recommendation; pair: readonly [TextAccent, Accent] }) {
+export function EventCard({
+  rec,
+  pair,
+  showScore = false,
+  favorite,
+}: {
+  rec: Recommendation;
+  pair: readonly [TextAccent, Accent];
+  showScore?: boolean;
+  /** Controlled favourite state from the store (stage 5); falls back to local state. */
+  favorite?: { on: boolean; toggle: () => void };
+}) {
   const { event: e } = rec;
   const status = statusLabel[e.status];
   const headingId = `ev-${e.id}-title`;
@@ -82,7 +94,7 @@ export function EventCard({ rec, pair }: { rec: Recommendation; pair: readonly [
         </div>
 
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
-          <FavoriteToggle label={e.title} />
+          <FavoriteToggle label={e.title} state={favorite} />
           {e.officialTicketUrl && (
             <a
               href={e.officialTicketUrl}
@@ -96,6 +108,7 @@ export function EventCard({ rec, pair }: { rec: Recommendation; pair: readonly [
             </a>
           )}
         </div>
+        {showScore && <ScoreBreakdown rec={rec} />}
       </div>
     </article>
   );

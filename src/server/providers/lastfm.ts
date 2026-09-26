@@ -130,3 +130,17 @@ export function getArtistChart(user: string, range: LfChartRange, ttlMs: number)
     return { artists, rangeHonoured: num(attr.from) === range.from && num(attr.to) === range.to };
   });
 }
+
+/** https://www.last.fm/api/show/artist.getInfo  (`stats.listeners`), used for the "Popular" view. */
+export function getArtistListeners(name: string): Promise<number | null> {
+  return cached(`lastfm.listeners.${name.toLowerCase()}`, 7 * DAY, async () => {
+    try {
+      const body = await call("artist.getInfo", { artist: name, autocorrect: 1 });
+      const stats = ((body.artist as Record<string, unknown> | undefined)?.stats ?? {}) as Record<string, unknown>;
+      return num(stats.listeners) ?? null;
+    } catch (e) {
+      if (e instanceof LastfmError && e.code === 6) return null; // artist not found
+      throw e;
+    }
+  });
+}

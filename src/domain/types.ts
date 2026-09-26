@@ -37,7 +37,7 @@ export type Venue = {
 
 export type EventKind = "concert" | "tour-date" | "festival" | "club-night" | "other";
 export type EventSize = "club" | "hall" | "arena" | "open-air" | "festival" | "unknown";
-export type EventStatus = "onsale" | "presale" | "soldout" | "cancelled" | "postponed" | "offsale" | "unknown";
+export type EventStatus = "onsale" | "presale" | "soldout" | "cancelled" | "postponed" | "rescheduled" | "offsale" | "unknown";
 
 export type LineupEntry = {
   artist: Artist;
@@ -58,6 +58,8 @@ export type MusicEvent = {
   kind: EventKind;
   title: string;
   startsAt: string; // ISO with offset
+  /** false when the provider only knows the day (time TBA). */
+  startTimeKnown: boolean;
   endsAt?: string;
   durationDays?: number;
   venue: Venue;
@@ -71,6 +73,8 @@ export type MusicEvent = {
   merchUrl?: string;
   imageUrl?: string;
   announcedAt?: string;
+  /** First time mupla saw this event. Approximates "newly announced" (no provider has an announcement date). */
+  firstSeenAt?: string;
   firstEditionYear?: number;
   sources: SourceRef[];
 };

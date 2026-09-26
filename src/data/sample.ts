@@ -19,7 +19,7 @@ const wiese = venue("v3", "Festivalwiese Nord", "Kassel", 51.31, 9.48);
 export const sampleRecommendations: Recommendation[] = [
   {
     event: {
-      id: "e1", kind: "tour-date", title: "Nachtfalter Orchester", startsAt: "2026-11-14T20:00:00+01:00",
+      id: "e1", kind: "tour-date", title: "Nachtfalter Orchester", startTimeKnown: true, startsAt: "2026-11-14T20:00:00+01:00",
       venue: halle, lineup: [{ artist: artist("a1", "Nachtfalter Orchester", ["downtempo", "electronic"]), role: "headliner" }],
       genres: ["downtempo", "electronic", "jazz"], price: { min: 39, max: 58, currency: "EUR" },
       size: "hall", status: "onsale", officialTicketUrl: "https://example.org/tickets/e1",
@@ -31,7 +31,7 @@ export const sampleRecommendations: Recommendation[] = [
   },
   {
     event: {
-      id: "e2", kind: "concert", title: "Kiesel & Kobalt", startsAt: "2026-10-09T21:00:00+02:00",
+      id: "e2", kind: "concert", title: "Kiesel & Kobalt", startTimeKnown: true, startsAt: "2026-10-09T21:00:00+02:00",
       venue: club, lineup: [{ artist: artist("a2", "Kiesel & Kobalt", ["indietronica"]), role: "headliner" }],
       genres: ["indietronica", "dream pop"], price: undefined,
       size: "club", sizeEstimated: false, status: "presale", officialTicketUrl: "https://example.org/tickets/e2",
@@ -43,7 +43,7 @@ export const sampleRecommendations: Recommendation[] = [
   },
   {
     event: {
-      id: "e3", kind: "festival", title: "Weitwinkel Festival", startsAt: "2027-06-18T14:00:00+02:00",
+      id: "e3", kind: "festival", title: "Weitwinkel Festival", startTimeKnown: true, startsAt: "2027-06-18T14:00:00+02:00",
       endsAt: "2027-06-20T23:00:00+02:00", durationDays: 3, venue: wiese,
       lineup: [
         { artist: artist("a3", "Lumen Delta", ["ambient"]), role: "lineup" },
@@ -60,7 +60,7 @@ export const sampleRecommendations: Recommendation[] = [
   },
   {
     event: {
-      id: "e4", kind: "concert", title: "Orbit Chor", startsAt: "2026-12-02T19:30:00+01:00",
+      id: "e4", kind: "concert", title: "Orbit Chor", startTimeKnown: true, startsAt: "2026-12-02T19:30:00+01:00",
       venue: halle, lineup: [{ artist: artist("a6", "Orbit Chor", ["neoclassical"]), role: "headliner" }],
       genres: ["neoclassical", "modern classical"], price: { min: 25, max: 25, currency: "EUR" },
       size: "hall", sizeEstimated: true, status: "soldout", officialTicketUrl: "https://example.org/tickets/e4",
@@ -72,7 +72,7 @@ export const sampleRecommendations: Recommendation[] = [
   },
   {
     event: {
-      id: "e5", kind: "tour-date", title: "Die Fernen Freunde", startsAt: "2027-02-20T20:00:00+01:00",
+      id: "e5", kind: "tour-date", title: "Die Fernen Freunde", startTimeKnown: true, startsAt: "2027-02-20T20:00:00+01:00",
       venue: halle, lineup: [{ artist: artist("a7", "Die Fernen Freunde", ["indie rock"]), role: "headliner" }],
       genres: ["indie rock"], price: { min: 45, max: 72, currency: "EUR" },
       size: "hall", status: "onsale", officialTicketUrl: "https://example.org/tickets/e5",

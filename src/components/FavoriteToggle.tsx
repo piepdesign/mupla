@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 
-/** Stage 1: local state only. Persistence follows in stage 5. */
-export function FavoriteToggle({ label }: { label: string }) {
-  const [on, setOn] = useState(false);
+/** Controlled when `state` is given (favourites store), otherwise local only. */
+export function FavoriteToggle({ label, state }: { label: string; state?: { on: boolean; toggle: () => void } }) {
+  const [localOn, setLocalOn] = useState(false);
+  const on = state ? state.on : localOn;
+  const toggle = state ? state.toggle : () => setLocalOn((v) => !v);
   return (
     <button
       type="button"
       aria-pressed={on}
-      onClick={() => setOn((v) => !v)}
+      onClick={toggle}
       className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded border border-control px-3 text-sm font-medium hover:bg-fg/5"
     >
       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">

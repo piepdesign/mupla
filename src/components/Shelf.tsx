@@ -11,6 +11,11 @@ export function Shelf({
   pair,
   items,
   emptyText = "Hier ist gerade nichts.",
+  note,
+  showScore = false,
+  limit,
+  favorites,
+  footer,
 }: {
   id: string;
   title: string;
@@ -18,7 +23,13 @@ export function Shelf({
   pair: readonly [TextAccent, Accent];
   items: Recommendation[];
   emptyText?: string;
+  note?: string;
+  showScore?: boolean;
+  limit?: number;
+  favorites?: { isOn: (id: string) => boolean; toggle: (id: string) => void };
+  footer?: React.ReactNode;
 }) {
+  const shown = limit ? items.slice(0, limit) : items;
   const headingId = `shelf-${id}`;
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-4">
@@ -28,17 +39,24 @@ export function Shelf({
         </h2>
         <p className="mt-2 text-base font-medium">{question}</p>
       </AccentSurface>
+      {note && <p className="max-w-[75ch] text-sm text-fg-muted">{note}</p>}
       {items.length === 0 ? (
         <p className="text-fg-muted">{emptyText}</p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {items.map((rec) => (
+          {shown.map((rec) => (
             <li key={rec.event.id}>
-              <EventCard rec={rec} pair={pair} />
+              <EventCard
+                rec={rec}
+                pair={pair}
+                showScore={showScore}
+                favorite={favorites ? { on: favorites.isOn(rec.event.id), toggle: () => favorites.toggle(rec.event.id) } : undefined}
+              />
             </li>
           ))}
         </ul>
       )}
+      {footer}
     </section>
   );
 }
