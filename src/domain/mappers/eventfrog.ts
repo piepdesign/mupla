@@ -53,13 +53,21 @@ export function rubricPath(id: number, rubrics: Map<number, EfRubric>): string[]
 
 /**
  * Which rubrics count as music. Eventfrog's rubric tree is not documented, so this matches titles
- * (German, English, French) and includes every descendant of a match.
+ * (German, English, French) and includes every descendant of a match. `(?!al)` keeps "Musical" out.
+ * Checked against Fynn's live data on 2026-09-26: without the exclusions, musicals, shows,
+ * children's events and courses made up about a fifth of the results.
  */
-const MUSIC_RUBRIC_RE = /musi[kc]|musique|konzert|concert|festival|party|partys|parties|clubbing|nightlife|disco|dj\b/i;
+const MUSIC_RUBRIC_RE = /musi[kc](?!al)|musique|konzert|concert|festival|party|partys|parties|clubbing|nightlife|disco|\bdj\b/i;
+const NON_MUSIC_RUBRIC_RE = /musical|show|variet|theater|theatre|kabarett|comedy|lesung|kinder|kids|kurs|seminar|workshop|führung|sport/i;
 
 export function musicRubricIds(rubrics: EfRubric[]): number[] {
   const byId = new Map(rubrics.map((r) => [r.id, r]));
-  return rubrics.filter((r) => rubricPath(r.id, byId).some((t) => MUSIC_RUBRIC_RE.test(t))).map((r) => r.id);
+  return rubrics
+    .filter((r) => {
+      const path = rubricPath(r.id, byId);
+      return path.some((t) => MUSIC_RUBRIC_RE.test(t)) && !path.some((t) => NON_MUSIC_RUBRIC_RE.test(t));
+    })
+    .map((r) => r.id);
 }
 
 const FESTIVAL_RE = /\bfestival|fest\b|open ?air/i;
@@ -72,11 +80,16 @@ function kindFor(title: string, path: string[]): EventKind {
 }
 
 /** Generic rubric words that say nothing about genre. */
-const GENERIC = /^(musik|music|musique|konzerte?|concerts?|festivals?|partys?|parties|party|clubbing|nightlife|diverse|sonstige|andere|other|autres?|divers)$/i;
+const GENERIC = /^(musik|music|musique|konzerte?|concerts?|festivals?|partys?|parties|party|clubbing|nightlife|diverse|andere|other|autres?|divers|(sonstige|weitere|andere)\b.*)$/i;
 
-/** Genre tags from rubric titles: "Rock / Pop" -> ["rock", "pop"], generic words dropped. */
+/**
+ * Genre tags from the most specific rubric title only: "Rock / Pop" -> ["rock", "pop"].
+ * Parent titles ("Konzerte", "Partys") are categories, not genres.
+ */
 export function genresFromRubrics(path: string[]): string[] {
-  const parts = path.flatMap((t) => t.split(/\s*[/&,+]\s*|\s+und\s+|\s+and\s+/i)).map((p) => p.trim());
+  const leaf = path[0];
+  if (!leaf) return [];
+  const parts = leaf.split(/\s*[/&,+]\s*|\s+und\s+|\s+and\s+/i).map((p) => p.trim());
   return normalizeGenres(parts.filter((p) => p && !GENERIC.test(p)));
 }
 

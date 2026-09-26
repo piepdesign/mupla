@@ -20,7 +20,7 @@ import type { EventProvider, EventQuery, ProviderResult } from "./types";
 const BASE = "https://api.eventfrog.net/public/v1";
 const GAP_MS = 2_100; // 30 requests per minute
 const PER_PAGE = 1000;
-const MAX_PAGES = 3;
+const MAX_PAGES = 6; // 6 of 2000 daily requests; the response order is not documented, so a cap loses random events
 const ID_BATCH = 100;
 const TTL = 12 * HOUR;
 
@@ -75,7 +75,7 @@ export const eventfrog: EventProvider = {
       ...musicIds.map((id): [string, string] => ["rubId", String(id)]),
     ];
     const day = (d: Date) => d.toISOString().slice(0, 10);
-    const sweep = await cached<Sweep>(`ef.events.${q.center.lat.toFixed(2)}.${q.center.lon.toFixed(2)}.${Math.round(q.radiusKm)}.${day(q.from)}.${day(q.to)}`, TTL, async () => {
+    const sweep = await cached<Sweep>(`ef.events.${musicIds.join("-")}.${q.center.lat.toFixed(2)}.${q.center.lon.toFixed(2)}.${Math.round(q.radiusKm)}.${day(q.from)}.${day(q.to)}`, TTL, async () => {
       const events: Record<string, unknown>[] = [];
       let total = 0;
       for (let page = 1; page <= MAX_PAGES; page++) {
@@ -90,7 +90,7 @@ export const eventfrog: EventProvider = {
     });
 
     if (sweep.total > sweep.events.length) {
-      warnings.push(`Eventfrog meldet ${sweep.total} Termine im Umkreis, abgerufen wurden ${sweep.events.length}. Die spätesten fehlen.`);
+      warnings.push(`Eventfrog meldet ${sweep.total} Termine im Umkreis, abgerufen wurden ${sweep.events.length}. Der Rest fehlt, welche genau, legt Eventfrog fest.`);
     }
 
     const locMap = new Map(sweep.locations.map((l) => [l.id, l]));

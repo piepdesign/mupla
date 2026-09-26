@@ -10,6 +10,13 @@ const rubrics = parseRubrics({
     { id: 3, parentId: 0, title: { de: "Festivals" } },
     { id: 4, parentId: 0, title: { de: "Theater" } },
     { id: 41, parentId: 4, title: { de: "Komödie" } },
+    { id: 5, parentId: 0, title: { de: "Musicals & Shows" } },
+    { id: 51, parentId: 5, title: { de: "Musical" } },
+    { id: 22, parentId: 2, title: { de: "Kinderparty" } },
+    { id: 6, parentId: 0, title: { de: "Kurse / Seminare" } },
+    { id: 61, parentId: 6, title: { de: "Musik / Tanz" } },
+    { id: 23, parentId: 2, title: { de: "Sonstige Partys" } },
+    { id: 13, parentId: 1, title: { de: "Weitere Musikrichtungen" } },
   ],
   totalNumberOfResources: 7,
 });
@@ -59,13 +66,16 @@ describe("rubrics", () => {
   it("builds the path from leaf to root", () => {
     expect(rubricPath(11, rubricMap)).toEqual(["Rock / Pop", "Konzerte"]);
   });
-  it("selects music rubrics including their children, not theatre", () => {
-    expect(musicRubricIds(rubrics).sort()).toEqual([1, 11, 2, 21, 3].sort());
+  it("selects music rubrics including their children, not theatre, musicals, kids or courses", () => {
+    expect(musicRubricIds(rubrics).sort()).toEqual([1, 11, 13, 2, 21, 23, 3].sort());
   });
   it("splits rubric titles into genres and drops generic words", () => {
     expect(genresFromRubrics(["Rock / Pop", "Konzerte"])).toEqual(["rock", "pop"]);
     expect(genresFromRubrics(["Techno & House", "Party"])).toEqual(["techno", "house"]);
     expect(genresFromRubrics(["Festivals"])).toEqual([]);
+    expect(genresFromRubrics(["Sonstige Partys", "Party"])).toEqual([]);
+    expect(genresFromRubrics(["Weitere Musikrichtungen", "Konzerte"])).toEqual([]);
+    expect(genresFromRubrics(["Jazz / Blues", "Konzerte"])).toEqual(["jazz", "blues"]);
   });
 });
 
