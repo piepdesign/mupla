@@ -1,6 +1,6 @@
 import type { MusicEvent, Recommendation } from "@/domain/types";
 import type { Accent, TextAccent } from "@/design/tokens";
-import { AccentSurface } from "./AccentSurface";
+import { SectionHeader } from "./SectionHeader";
 import { EventCard } from "./EventCard";
 
 /** A shelf is a labelled list, not a stack of divs. */
@@ -16,6 +16,9 @@ export function Shelf({
   limit,
   favorites,
   footer,
+  control,
+  headerless = false,
+  labelledBy,
 }: {
   id: string;
   title: string;
@@ -28,17 +31,20 @@ export function Shelf({
   limit?: number;
   favorites?: { isOn: (e: MusicEvent) => boolean; toggle: (e: MusicEvent) => void };
   footer?: React.ReactNode;
+  control?: React.ReactNode;
+  /** The page renders the heading itself (above the search panel); the list stays labelled by `labelledBy`. */
+  headerless?: boolean;
+  labelledBy?: string;
 }) {
   const shown = limit ? items.slice(0, limit) : items;
   const headingId = `shelf-${id}`;
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-4">
-      <AccentSurface accent={pair[0]} className="rounded-card px-4 py-5 sm:px-6">
-        <h2 id={headingId} className="display text-[2.25rem] sm:text-[3rem]">
-          {title}
-        </h2>
-        <p className="mt-2 text-base font-medium">{question}</p>
-      </AccentSurface>
+    <section aria-labelledby={labelledBy ?? headingId} className="flex flex-col gap-4">
+      {headerless ? null : (
+        <SectionHeader id={headingId} title={title} question={question} accent={pair[0]} level={1}>
+          {control}
+        </SectionHeader>
+      )}
       {note && <p className="max-w-[75ch] text-sm text-fg-muted">{note}</p>}
       {items.length === 0 ? (
         <p className="text-fg-muted">{emptyText}</p>

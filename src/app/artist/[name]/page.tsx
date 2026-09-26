@@ -6,6 +6,9 @@ import { TAG_BLOCKLIST } from "@/domain/profile";
 import type { MusicEvent } from "@/domain/types";
 import { distanceKm } from "@/domain/scoring";
 import { ArtistFavorite } from "@/components/ArtistFavorite";
+import { Panel } from "@/components/Panel";
+import { GeneratedArt } from "@/components/GeneratedArt";
+import { pairFor } from "@/design/tokens";
 import { EventRows } from "@/components/EventRows";
 import { ExternalLink } from "@/components/ExternalLink";
 import { getCurationData } from "@/server/curation";
@@ -68,26 +71,37 @@ export default async function ArtistPage({ params }: PageProps<"/artist/[name]">
 
   const rows = (list: MusicEvent[]) => list.map((event) => ({ event, distanceKm: distanceKm(event, home) }));
   const total = app.ownTour.length + app.guest.length + app.festival.length;
+  // Photo from the event data (Ticketmaster attraction images). Last.fm images are excluded by its terms.
+  const k = normalizeName(name);
+  const imageUrl = all.flatMap((e) => e.lineup).find((l) => normalizeName(l.artist.name) === k && l.artist.imageUrl)?.artist.imageUrl;
+  const pair = pairFor(name);
 
   return (
     <article aria-labelledby="artist-name" className="flex flex-col gap-8">
-      <header className="flex flex-col gap-3">
-        <p className="text-sm text-fg-muted">Artist</p>
-        <h1 id="artist-name" className="display text-[2.5rem] sm:text-[3.5rem]">
-          {name}
-        </h1>
-        <div className="flex flex-wrap gap-2">
-          <ArtistFavorite name={name} />
-          <ExternalLink href={lastfmArtistUrl(name)} context={`${name} auf Last.fm`}>
-            Auf Last.fm
-          </ExternalLink>
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-end">
+        <div className="w-full max-w-sm shrink-0 overflow-hidden rounded-card sm:w-72">
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl} alt="" className="aspect-[2/1] w-full object-cover" />
+          ) : (
+            <GeneratedArt pair={pair} label={name} />
+          )}
+        </div>
+        <div className="flex flex-col gap-3">
+          <p className="text-sm font-semibold uppercase tracking-wide text-fg-muted">Artist</p>
+          <h1 id="artist-name" className="display text-[2.5rem] sm:text-[3.5rem]">
+            {name}
+          </h1>
+          <div className="flex flex-wrap gap-2">
+            <ArtistFavorite name={name} />
+            <ExternalLink href={lastfmArtistUrl(name)} context={`${name} auf Last.fm`}>
+              Auf Last.fm
+            </ExternalLink>
+          </div>
         </div>
       </header>
 
-      <section aria-labelledby="hoerhistorie" className="flex flex-col gap-2">
-        <h2 id="hoerhistorie" className="text-2xl font-bold">
-          Deine Hörhistorie
-        </h2>
+      <Panel id="hoerhistorie" title="Listening" accent="violet">
         <ul className="flex list-disc flex-col gap-1 pl-5">
           {hist.top && (
             <li>
@@ -106,18 +120,15 @@ export default async function ArtistPage({ params }: PageProps<"/artist/[name]">
           ))}
           {!hist.top && !hist.dormant && !hist.similarTo && <li>In deinem Profil kommt {name} nicht vor.</li>}
         </ul>
-      </section>
+      </Panel>
 
-      <section aria-labelledby="genres" className="flex flex-col gap-2">
-        <h2 id="genres" className="text-2xl font-bold">
-          Genres
-        </h2>
+      <Panel id="genres" title="Genres" accent="magenta">
         {genres.length ? (
           <>
             <ul className="flex flex-wrap gap-1.5">
               {genres.map((g) => (
                 <li key={g}>
-                  <Link href={`/suche?genre=${encodeURIComponent(g)}`} className="inline-flex min-h-11 items-center rounded border border-border px-3 text-sm hover:bg-fg/5">
+                  <Link href={`/suche?genre=${encodeURIComponent(g)}`} className="inline-flex min-h-11 items-center rounded-full border border-control px-4 text-sm font-medium hover:bg-fg/5">
                     {g}
                   </Link>
                 </li>
@@ -128,12 +139,9 @@ export default async function ArtistPage({ params }: PageProps<"/artist/[name]">
         ) : (
           <p className="text-fg-muted">Keine Genre-Angaben gefunden.</p>
         )}
-      </section>
+      </Panel>
 
-      <section aria-labelledby="termine" className="flex flex-col gap-4">
-        <h2 id="termine" className="text-2xl font-bold">
-          Kommende Termine ({total})
-        </h2>
+      <Panel id="termine" title={`Upcoming (${total})`} accent="coral">
         {total === 0 && (
           <p className="text-fg-muted">
             Keine Termine in den geladenen Daten. Gesucht wird im Umkreis von 300 km um dein Zuhause und für Artists aus deinem Profil zusätzlich in den Nachbarländern.
@@ -155,12 +163,9 @@ export default async function ArtistPage({ params }: PageProps<"/artist/[name]">
             </div>
           ) : null,
         )}
-      </section>
+      </Panel>
 
-      <section aria-labelledby="aehnliche" className="flex flex-col gap-2">
-        <h2 id="aehnliche" className="text-2xl font-bold">
-          Ähnliche Artists
-        </h2>
+      <Panel id="aehnliche" title="Similar" accent="cyan">
         {similarError ? (
           <p className="text-fg-muted">Last.fm war gerade nicht erreichbar.</p>
         ) : similar.length ? (
@@ -168,7 +173,7 @@ export default async function ArtistPage({ params }: PageProps<"/artist/[name]">
             <ul className="flex flex-wrap gap-1.5">
               {similar.map((s) => (
                 <li key={s.name}>
-                  <Link href={artistHref(s.name)} className="inline-flex min-h-11 items-center gap-1 rounded border border-border px-3 text-sm hover:bg-fg/5">
+                  <Link href={artistHref(s.name)} className="inline-flex min-h-11 items-center gap-1 rounded-full border border-control px-4 text-sm font-medium hover:bg-fg/5">
                     {s.name}
                     {inProfile.has(normalizeName(s.name)) && <span className="text-fg-muted">(hörst du)</span>}
                   </Link>
@@ -180,7 +185,7 @@ export default async function ArtistPage({ params }: PageProps<"/artist/[name]">
         ) : (
           <p className="text-fg-muted">Last.fm kennt keine ähnlichen Artists.</p>
         )}
-      </section>
+      </Panel>
     </article>
   );
 }

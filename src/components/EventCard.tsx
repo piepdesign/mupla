@@ -61,7 +61,7 @@ export function EventCard({
         )}
 
         {/* The reason is the point of mupla: it stays on every card, set apart by the rule, not by a label. */}
-        <div className="mt-1 border-l-4 border-focus pl-3">
+        <div className="mt-1 border-l-4 pl-3" style={{ borderColor: `var(--${pair[0]})` }}>
           {rec.reasons.map((r, i) => (
             <p key={i} className="leading-snug">
               {renderReason(r).map((s, j) =>

@@ -6,6 +6,9 @@ import { normalizeName } from "@/domain/normalize";
 import { emptyFavorites, parseFavorites, useFavorites, writeFavorites } from "@/lib/favorites";
 import { artistHref } from "@/lib/links";
 import { EventRows, type EventRow } from "./EventRows";
+import { SectionHeader } from "./SectionHeader";
+import { SourceList } from "./SourceList";
+import { Panel } from "./Panel";
 
 const dateFmt = new Intl.DateTimeFormat("de-DE", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/Berlin" });
 const byDate = (a: EventRow, b: EventRow) => Date.parse(a.event.startsAt) - Date.parse(b.event.startsAt);
@@ -86,106 +89,88 @@ export function ProfileView({
     }
   };
 
+  const genreChoices = [...new Set([...topGenres, ...favs.genres])];
+
   return (
-    <div className="flex flex-col gap-10">
-      <header className="flex flex-col gap-2">
-        <h1 className="display text-[2.5rem] sm:text-[3.5rem]">Mein Profil</h1>
-        {username ? (
-          <p className="text-fg-muted">
-            Hörprofil: <strong className="text-fg">{username}</strong> auf Last.fm. Favoriten liegen nur in diesem Browser.
-          </p>
-        ) : (
-          <p role="status">{setupMessage}</p>
-        )}
-      </header>
+    <div className="flex flex-col gap-8">
+      <SectionHeader id="profil-titel" title="Mein Profil" question="Deine Quellen, Favoriten und was neu ist." accent="violet" level={1} />
+      {!username && <p role="status">{setupMessage}</p>}
 
-      <section aria-labelledby="neu" className="flex flex-col gap-3">
-        <h2 id="neu" className="text-2xl font-bold">
-          Neu seit deinem letzten Besuch
-        </h2>
+      <Panel id="quellen" title="Connected" accent="acid">
+        <SourceList username={username} />
+      </Panel>
+
+      <Panel id="neu" title="New for you" accent="coral" hint={firstVisit ? undefined : `Seit deinem letzten Besuch am ${dateFmt.format(new Date(previousVisit!))}`}>
         {firstVisit ? (
-          <p className="text-fg-muted">Erster Besuch dieser Seite. Ab jetzt merkt sich mupla den Zeitpunkt und zeigt beim nächsten Mal hier, was dazugekommen ist.</p>
+          <p className="text-fg-muted">Erster Besuch dieser Seite. Ab jetzt merkt sich mupla den Zeitpunkt und zeigt beim nächsten Mal hier, was für deine Artists und Genres dazugekommen ist.</p>
+        ) : newRows.length ? (
+          <EventRows items={newRows} />
         ) : (
-          <>
-            <p className="text-sm text-fg-muted">
-              Seit {dateFmt.format(new Date(previousVisit!))}, für deine favorisierten Artists und Genres. „Neu“ heißt: mupla hat den Termin seitdem zum
-              ersten Mal gesehen. Ein echtes Ankündigungsdatum liefert keine der Quellen.
-            </p>
-            {newRows.length ? (
-              <EventRows items={newRows} />
-            ) : (
-              <p className="text-fg-muted">
-                Nichts Neues{favs.artists.length + favs.genres.length === 0 ? ", auch weil du noch keine Artists oder Genres favorisiert hast" : ""}.
-              </p>
-            )}
-          </>
+          <p className="text-fg-muted">
+            Nichts Neues{favs.artists.length + favs.genres.length === 0 ? ", auch weil du noch keine Artists oder Genres favorisiert hast" : ""}. „Neu“ heißt: mupla hat den Termin seitdem zum ersten Mal gesehen.
+          </p>
         )}
-      </section>
+      </Panel>
 
-      <section aria-labelledby="gemerkt" className="flex flex-col gap-3">
-        <h2 id="gemerkt" className="text-2xl font-bold">
-          Gemerkte Termine ({favoriteRows.length})
-        </h2>
-        {favoriteRows.length ? <EventRows items={favoriteRows} /> : <p className="text-fg-muted">Noch keine Termine gemerkt.</p>}
+      <Panel id="gemerkt" title={`Saved (${favoriteRows.length})`} accent="cyan">
+        {favoriteRows.length ? <EventRows items={favoriteRows} /> : <p className="text-fg-muted">Noch keine Termine gemerkt. Mit dem Herz an einer Karte landen sie hier.</p>}
         {missing > 0 && (
           <p className="text-sm text-fg-muted">
             {missing} gemerkte {missing === 1 ? "Termin ist" : "Termine sind"} nicht mehr in den Daten, vermutlich vorbei oder bei der Quelle entfernt.
           </p>
         )}
-      </section>
+      </Panel>
 
-      <section aria-labelledby="artists" className="flex flex-col gap-3">
-        <h2 id="artists" className="text-2xl font-bold">
-          Favorisierte Artists ({favs.artists.length})
-        </h2>
-        {favs.artists.length ? (
+      <div className="grid gap-8 lg:grid-cols-2">
+        <Panel id="artists" title={`Artists (${favs.artists.length})`} accent="amber">
+          {favs.artists.length ? (
+            <ul className="flex flex-wrap gap-2">
+              {favs.artists.map((a) => (
+                <li key={a} className="flex items-center rounded-full border border-control">
+                  <Link href={artistHref(a)} className="inline-flex min-h-11 items-center rounded-l-full pr-2 pl-4 text-sm font-medium hover:underline">
+                    {a}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => toggle("artists", a)}
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-r-full text-sm hover:bg-fg/5"
+                  >
+                    <span aria-hidden="true">✕</span>
+                    <span className="sr-only">{a} aus den Favoriten entfernen</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-fg-muted">Artists merkst du auf ihrer Seite. Die öffnest du über die Namen in den Begründungen.</p>
+          )}
+        </Panel>
+
+        <Panel id="genres" title={`Genres (${favs.genres.length})`} accent="magenta" hint="Deine meistgehörten Genres. Antippen zum Merken.">
           <ul className="flex flex-wrap gap-2">
-            {favs.artists.map((a) => (
-              <li key={a} className="flex items-center rounded border border-border">
-                <Link href={artistHref(a)} className="inline-flex min-h-11 items-center px-3 text-sm underline underline-offset-2">
-                  {a}
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => toggle("artists", a)}
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center border-l border-border text-sm hover:bg-fg/5"
-                >
-                  <span aria-hidden="true">✕</span>
-                  <span className="sr-only">{a} aus den Favoriten entfernen</span>
-                </button>
-              </li>
-            ))}
+            {genreChoices.map((g) => {
+              const on = has("genres", g);
+              return (
+                <li key={g}>
+                  <button
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggle("genres", g)}
+                    className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-medium ${
+                      on ? "border-fg bg-fg text-bg" : "border-control hover:bg-fg/5"
+                    }`}
+                  >
+                    {on && <span aria-hidden="true">✓</span>}
+                    {g}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
-        ) : (
-          <p className="text-fg-muted">Artists merkst du auf ihrer Artist-Seite. Die erreichst du über die Namen in den Begründungen.</p>
-        )}
-      </section>
+        </Panel>
+      </div>
 
-      <section aria-labelledby="genres" className="flex flex-col gap-3">
-        <h2 id="genres" className="text-2xl font-bold">
-          Favorisierte Genres ({favs.genres.length})
-        </h2>
-        <fieldset className="flex flex-col gap-2">
-          <legend className="text-sm text-fg-muted">Deine meistgehörten Genres, zum An- und Abwählen:</legend>
-          <div className="flex flex-wrap gap-x-4">
-            {[...new Set([...topGenres, ...favs.genres])].map((g) => (
-              <label key={g} className="flex min-h-11 items-center gap-2 text-sm">
-                <input type="checkbox" checked={has("genres", g)} onChange={() => toggle("genres", g)} className="h-5 w-5" />
-                {g}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      </section>
-
-      <section aria-labelledby="sichern" className="flex flex-col gap-3">
-        <h2 id="sichern" className="text-2xl font-bold">
-          Sichern und übertragen
-        </h2>
-        <p className="max-w-[70ch] text-sm text-fg-muted">
-          Die Favoriten stehen nur im Speicher dieses Browsers. Als JSON kannst du sie sichern oder in einen anderen Browser mitnehmen. Ein Import ersetzt die
-          vorhandenen Favoriten.
-        </p>
+      <Panel id="sichern" title="Backup" accent="violet" hint="Favoriten liegen nur in diesem Browser. Als JSON sicherst du sie oder nimmst sie in einen anderen Browser mit. Ein Import ersetzt die vorhandenen.">
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={exportJson} className="min-h-11 rounded bg-fg px-4 text-sm font-semibold text-bg hover:opacity-90">
             Als JSON exportieren
@@ -207,7 +192,8 @@ export function ProfileView({
         <p aria-live="polite" className="text-sm">
           {importMsg}
         </p>
-      </section>
+      </Panel>
     </div>
   );
 }
+

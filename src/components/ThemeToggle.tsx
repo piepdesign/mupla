@@ -1,57 +1,51 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MonitorIcon, MoonIcon, SunIcon } from "./icons";
+import { MoonIcon, SunIcon } from "./icons";
 
-type Mode = "system" | "light" | "dark";
 const KEY = "mupla-theme";
-const labels: Record<Mode, string> = { system: "System", light: "Hell", dark: "Dunkel" };
 
-function apply(mode: Mode) {
-  const root = document.documentElement;
-  if (mode === "system") root.removeAttribute("data-theme");
-  else root.setAttribute("data-theme", mode);
-}
-
-/** Runs before paint (see layout.tsx) so the chosen theme does not flash. */
+/** Runs before paint (see layout.tsx) so the chosen theme does not flash. Without a stored choice the system decides. */
 export const themeBootScript = `try{var m=localStorage.getItem("${KEY}");if(m==="light"||m==="dark")document.documentElement.setAttribute("data-theme",m)}catch(e){}`;
 
-const ORDER: Mode[] = ["system", "light", "dark"];
-const ICON = { system: MonitorIcon, light: SunIcon, dark: MoonIcon };
+function currentIsDark(): boolean {
+  const attr = document.documentElement.getAttribute("data-theme");
+  if (attr) return attr === "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
 
-/** One icon button that cycles System, Hell, Dunkel. The name says the current mode and what a press does. */
+/**
+ * Light/dark switch. Starts from the system setting; a press stores an explicit choice.
+ * A toggle button (aria-pressed) so screen readers announce the state, not an action.
+ */
 export function ThemeToggle() {
-  const [mode, setMode] = useState<Mode>("system");
+  const [dark, setDark] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(KEY);
-      // Sync with the value the boot script already applied.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (stored === "light" || stored === "dark") setMode(stored);
-    } catch {}
+    // Read what the boot script or the system already applied.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDark(currentIsDark());
   }, []);
 
-  function change(next: Mode) {
-    setMode(next);
-    apply(next);
+  function toggle() {
+    const next = !dark;
+    setDark(next);
+    document.documentElement.setAttribute("data-theme", next ? "dark" : "light");
     try {
-      if (next === "system") localStorage.removeItem(KEY);
-      else localStorage.setItem(KEY, next);
+      localStorage.setItem(KEY, next ? "dark" : "light");
     } catch {}
   }
 
-  const next = ORDER[(ORDER.indexOf(mode) + 1) % ORDER.length];
-  const Icon = ICON[mode];
   return (
     <button
       type="button"
-      onClick={() => change(next)}
-      aria-label={`Darstellung: ${labels[mode]}. Wechseln zu ${labels[next]}`}
-      title={`Darstellung: ${labels[mode]}`}
+      onClick={toggle}
+      aria-pressed={dark}
+      aria-label="Dunkles Design"
+      title={dark ? "Helles Design" : "Dunkles Design"}
       className="inline-flex h-11 w-11 items-center justify-center rounded hover:bg-fg/10"
     >
-      <Icon />
+      {dark ? <SunIcon /> : <MoonIcon />}
     </button>
   );
 }

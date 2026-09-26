@@ -10,6 +10,7 @@ import { haversineKm } from "@/lib/geo";
 import type { CurationPageProps } from "./Dashboard";
 import { ArrowLeftIcon } from "./icons";
 import { SearchPanel } from "./SearchPanel";
+import { SectionHeader } from "./SectionHeader";
 import { Shelf } from "./Shelf";
 import { SpanSwitch } from "./SpanSwitch";
 import { UnrelatedList } from "./UnrelatedList";
@@ -51,6 +52,9 @@ export function ViewDetail({
         <ArrowLeftIcon className="h-4 w-4" />
         Übersicht
       </Link>
+      <SectionHeader id="view-title" title={meta.label} question={meta.question} accent={pairFor(view)[0]} level={1}>
+        {view === "timeframe" && !heading ? <SpanSwitch value={f.span} onChange={(span) => c.updateFilters({ ...f, span })} /> : null}
+      </SectionHeader>
       <SearchPanel
         filters={f}
         onChange={(nf) => {
@@ -65,7 +69,6 @@ export function ViewDetail({
         allGenres={props.allGenres}
         resultCount={result.items.length + unrelatedHits.length}
       />
-      {view === "timeframe" && !heading && <SpanSwitch value={f.span} onChange={(span) => c.updateFilters({ ...f, span })} />}
       <Shelf
         id={view}
         title={meta.label}
@@ -76,6 +79,8 @@ export function ViewDetail({
         showScore={c.showScore}
         limit={limit}
         favorites={c.favorites}
+        headerless
+        labelledBy="view-title"
         emptyText={
           view === "favorites"
             ? "Noch nichts gemerkt, oder die Filter blenden deine Favoriten aus. Mit dem Herz an einer Karte landet ein Termin hier."

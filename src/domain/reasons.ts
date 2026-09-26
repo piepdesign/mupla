@@ -41,7 +41,7 @@ export function renderReason(r: Reason): ReasonSegment[] {
         { text: r.tag, strong: true },
         { text: " grenzt an dein Profil an (über " },
         { text: r.via, strong: true },
-        { text: "), du kennst es noch nicht." },
+        { text: ")." },
       ];
     case "dormant-artist":
       return [
