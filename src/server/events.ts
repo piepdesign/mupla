@@ -5,11 +5,12 @@ import { dedupe } from "@/domain/merge";
 import type { MusicEvent } from "@/domain/types";
 import { geocodeCity } from "./geocode";
 import { icsFeeds, curated } from "./providers/feeds";
+import { eventfrog } from "./providers/eventfrog";
 import { ticketmaster } from "./providers/ticketmaster";
 import type { EventProvider, EventQuery, ProviderStatus } from "./providers/types";
 
 /** Registered providers. Curation and UI never import these, only getEvents(). */
-export const PROVIDERS: EventProvider[] = [ticketmaster, curated, icsFeeds];
+export const PROVIDERS: EventProvider[] = [ticketmaster, eventfrog, curated, icsFeeds];
 
 /** Nominatim is slow on purpose (1 req/s); geocode at most this many new cities per build. */
 const MAX_GEOCODE_PER_RUN = 15;

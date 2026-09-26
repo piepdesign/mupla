@@ -117,11 +117,53 @@ function ticketmaster(url) {
   return json({ _embedded: { events }, page: { size: 100, totalElements: events.length, totalPages: 1, number: 0 } });
 }
 
+// Eventfrog Public API v1 shapes (docs.api.eventfrog.net, 2026-09-26). Rubric tree is invented.
+const efRubrics = [
+  { id: 1, parentId: 0, title: { de: "Konzerte", en: "Concerts" } },
+  { id: 11, parentId: 1, title: { de: "Rock / Pop", en: "Rock / Pop" } },
+  { id: 12, parentId: 1, title: { de: "Jazz", en: "Jazz" } },
+  { id: 2, parentId: 0, title: { de: "Party", en: "Party" } },
+  { id: 21, parentId: 2, title: { de: "Techno / House", en: "Techno / House" } },
+  { id: 3, parentId: 0, title: { de: "Festivals", en: "Festivals" } },
+  { id: 4, parentId: 0, title: { de: "Theater", en: "Theatre" } },
+];
+const efLocations = cities.slice(0, 5).map(([city, lat, lng], i) => ({
+  id: String(900 + i), title: { de: ["Kulturhalle Beispiel", "Kellerclub Muster", "Schlosshof Beispiel", "Werkstatt Beispiel", "Seewiese Beispiel"][i] },
+  url: `https://eventfrog.ch/de/l/demo-${i}`, city, country: "DE", lat, lng, zip: "00000",
+}));
+function efEvent(i, title, rubricId, loc, daysAhead, extra = {}) {
+  const start = new Date(Date.now() + daysAhead * DAY);
+  start.setUTCHours(19, 0, 0, 0);
+  return {
+    id: String(7000 + i), title: { de: title }, url: `https://eventfrog.ch/de/p/demo-${i}`, rubricId, locationIds: [String(900 + loc)],
+    begin: start.toISOString(), end: new Date(start.getTime() + 5 * 3600_000).toISOString(),
+    cancelled: false, soldOut: false, littleTicketsLeft: false, agendaEntryOnly: false, visible: true, published: true,
+    lowestTicketPrice: 12 + i, presaleLink: `https://tickets.eventfrog.ch/demo-${i}`, ...extra,
+  };
+}
+function eventfrog(url) {
+  if (url.pathname.endsWith("/rubrics")) return json({ rubrics: efRubrics, totalNumberOfResources: efRubrics.length });
+  if (url.pathname.endsWith("/locations")) {
+    const ids = url.searchParams.getAll("id");
+    const locations = efLocations.filter((l) => ids.includes(l.id));
+    return json({ locations, totalNumberOfResources: locations.length });
+  }
+  const events = [
+    efEvent(1, "Sommerlicht Open Air", 3, 4, 120, { end: new Date(Date.now() + 122 * DAY).toISOString() }),
+    efEvent(2, "Nachtschicht: Techno bis Sonnenaufgang", 21, 1, 3),
+    efEvent(3, "Morgengrau", 11, 2, 22),
+    efEvent(4, "Jazz im Schlosshof", 12, 2, 50, { soldOut: true }),
+    efEvent(5, "Lumen Delta", 11, 3, 40),
+  ];
+  return json({ events, totalNumberOfResources: events.length });
+}
+
 globalThis.fetch = async (input, init) => {
   const url = new URL(typeof input === "string" ? input : input.url);
   if (url.host === "ws.audioscrobbler.com") return lastfm(url);
   if (url.host === "musicbrainz.org") return json(url.pathname.endsWith("/artist") ? { artists: [] } : { genres: [] });
   if (url.host === "app.ticketmaster.com") return ticketmaster(url);
+  if (url.host === "api.eventfrog.net") return eventfrog(url);
   if (url.host === "nominatim.openstreetmap.org") {
     const q = (url.searchParams.get("q") ?? "").toLowerCase();
     const hit = q && cities.find(([c]) => c.toLowerCase().startsWith(q));

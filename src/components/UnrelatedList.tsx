@@ -5,7 +5,7 @@ import { SectionHeader } from "./SectionHeader";
 const MAX = 60;
 
 /**
- * Search hits that have no relation to the listening profile. They get no card and no rank,
+ * Search hits with no or too weak a relation to the listening profile. They get no card and no rank,
  * because a card needs a true reason and there is none. Deliberately plain rows.
  */
 export function UnrelatedList({ items, active }: { items: { event: MusicEvent; distanceKm?: number }[]; active: boolean }) {
@@ -14,7 +14,7 @@ export function UnrelatedList({ items, active }: { items: { event: MusicEvent; d
       <SectionHeader
         id="ohne-profilbezug"
         title="Off Profile"
-        question="Passt zur Suche, hat aber keine Verbindung zu deinem Hörprofil. Darum ohne Begründung und ohne Rangfolge, nur nach Datum."
+        question="Passt zur Suche, aber zu wenig zu deinem Hörprofil für eine Empfehlung. Darum ohne Begründung und ohne Rangfolge, nur nach Datum."
         accent="amber"
       />
       {!active ? (

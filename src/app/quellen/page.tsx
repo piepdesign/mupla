@@ -29,6 +29,12 @@ export default function Sources() {
           Schnittstelle gibt.
         </p>
         <p>
+          Festivals, Partys und kleinere Veranstaltungen, sofern ein Key eingetragen ist:{" "}
+          <a href="https://eventfrog.ch" {...ext}>Eventfrog{newTab}</a> Public API. Der Schwerpunkt liegt in der Schweiz, in
+          Deutschland ist die Auswahl kleiner. Bilder von Eventfrog zeigt mupla nicht, weil die Schnittstelle direktes Einbinden
+          untersagt.
+        </p>
+        <p>
           Ortskoordinaten für Venues ohne eigene Angabe: Nominatim, Daten ©{" "}
           <a href="https://www.openstreetmap.org/copyright" {...ext}>OpenStreetMap-Mitwirkende, ODbL{newTab}</a>.
         </p>

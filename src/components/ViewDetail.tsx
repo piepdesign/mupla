@@ -39,7 +39,11 @@ export function ViewDetail({
   const unrelatedHits = (() => {
     // Without a query the list would be the whole event pool; it is meant for finding, not browsing.
     if (!unrelated || (!f.q && !f.genres.length)) return [];
-    const withDistance = unrelated.map((event) => ({
+    // Candidates whose link to the profile is too weak for a card at this discovery level belong here too,
+    // otherwise a search would not find them at all.
+    const shown = new Set(result.items.map((r) => r.event.id));
+    const pool = [...unrelated, ...props.candidates.filter((x) => !shown.has(x.event.id)).map((x) => x.event)];
+    const withDistance = pool.map((event) => ({
       event,
       distanceKm: event.venue.lat !== undefined && event.venue.lon !== undefined ? haversineKm(c.home, { lat: event.venue.lat, lon: event.venue.lon }) : undefined,
     }));

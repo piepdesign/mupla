@@ -11,7 +11,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "a11y": "tsx scripts/a11y.ts",
-    "dev:mock": "MUPLA_CACHE_DIR=.cache-mock LASTFM_USERNAME=demo LASTFM_API_KEY=mock TICKETMASTER_API_KEY=mock NODE_OPTIONS=\"--import ./scripts/mock-fetch.mjs\" next dev"
+    "dev:mock": "MUPLA_CACHE_DIR=.cache-mock LASTFM_USERNAME=demo LASTFM_API_KEY=mock TICKETMASTER_API_KEY=mock EVENTFROG_API_KEY=mock NODE_OPTIONS=\"--import ./scripts/mock-fetch.mjs\" next dev"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",
