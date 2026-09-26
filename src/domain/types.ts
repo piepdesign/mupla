@@ -81,7 +81,7 @@ export type TasteProfile = {
   topArtists: { artist: Artist; plays: number; weight: number }[];
   topTags: { tag: string; weight: number }[];
   adjacentArtists: { artist: Artist; via: string; match: number }[];
-  adjacentTags: { tag: string; via: string }[];
+  adjacentTags: { tag: string; via: string; method: "tag.getSimilar" | "similar-artists" }[];
   dormantArtists: { artist: Artist; lastHeavyPeriod: string; plays: number }[];
 };
 
